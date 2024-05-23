@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id    Int    @id @default(autoincrement())
+  name  String
+  email String @unique
+  pwd   String
+  image String
+
+  @@map("admins")
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  email String @unique
+  pwd   String
+  image String
+  // leads Leads[]
+  @@map("users")
+}
+
+// model Leads {
+//   id    Int    @id @default(autoincrement())
+//   lead_owner String @unique
+//   date DateTime @default(now())
+//   type_of_company String
+//   funnel_stage String
+//   company_name String
+//   region String
+//   country String
+//   contacts Contacts[]
+//   user User @relation(fields: [lead_owner],references: [name])
+// }
+// model Contacts{
+//   id    Int    @id @default(autoincrement())
+//   first_name String
+//   last_name String
+//   designation String
+//   email String
+//   phone_number String
+//   lead Leads @relation(fields: [id],references: [id])
+// }
