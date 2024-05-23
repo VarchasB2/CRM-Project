@@ -32,15 +32,15 @@ const DashboardNav = () => {
             <span className="sr-only">Acme Inc</span>
           </Link>
           <TooltipProvider delayDuration={0}>
-            <ShortToolTip href={"/admin/dashboard"}>Dashboard</ShortToolTip>
+            <ShortToolTip href={"/dashboard"}>Dashboard</ShortToolTip>
           </TooltipProvider>
           <TooltipProvider delayDuration={0}>
-            <ShortToolTip href={"/admin/resumes"}>Resumes</ShortToolTip>
+            <ShortToolTip href={"/resumes"}>Resumes</ShortToolTip>
           </TooltipProvider>
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
           <TooltipProvider delayDuration={0}>
-            <ShortToolTip href={"/admin/settings"}>Settings</ShortToolTip>
+            <ShortToolTip href={"/settings"}>Settings</ShortToolTip>
           </TooltipProvider>
         </nav>
       </aside>

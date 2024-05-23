@@ -16,21 +16,21 @@ const NavSheet = () => {
               <nav className="grid gap-6 text-lg font-medium">
                
                 <Link
-                  href="/admin/dashboard"
+                  href="/dashboard"
                   className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                 >
                   <Home className="h-5 w-5" />
                   Dashboard
                 </Link>
                 <Link
-                  href="/admin/resumes"
+                  href="/resumes"
                   className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                 >
                   <Users className="h-5 w-5" />
                   Resumes
                 </Link>
                 <Link
-                  href="/admin/settings"
+                  href="/settings"
                   className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                 >
                   <Settings className="h-5 w-5" />
