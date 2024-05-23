@@ -24,6 +24,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -54,8 +55,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         return {
           ...token,
-          // username: user.username,
-          // userimage: user.userimage,
+          username: user.username,
+          userimage: user.userimage,
         };
       }
       return token;
