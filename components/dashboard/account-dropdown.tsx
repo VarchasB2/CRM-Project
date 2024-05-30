@@ -10,10 +10,11 @@ import {
 import { Button } from "../ui/button";
 import Image from "next/image";
 import { signOut, useSession } from "next-auth/react";
-import { ModeToggle } from "../modeToggle/page";
 const AccountDropDown = () => {
   const {data: session} = useSession();
+  
   return (
+    
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -40,6 +41,7 @@ const AccountDropDown = () => {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+  
 };
 
 export default AccountDropDown;

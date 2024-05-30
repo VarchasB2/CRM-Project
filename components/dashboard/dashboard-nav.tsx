@@ -1,25 +1,16 @@
 import {
-  Home,
-  LineChart,
-  Package,
-  Package2,
-  Settings,
-  ShoppingCart,
-  Users2,
+  Package2
 } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import { ModeToggle } from "../modeToggle/page";
 import {
-
   TooltipProvider,
-
 } from "../ui/tooltip";
 import ShortToolTip from "./ShortToolTip";
 
 
 
 const DashboardNav = () => {
-  // const path = usePathname();
   return (
     <>
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
@@ -35,10 +26,11 @@ const DashboardNav = () => {
             <ShortToolTip href={"/dashboard"}>Dashboard</ShortToolTip>
           </TooltipProvider>
           <TooltipProvider delayDuration={0}>
-            <ShortToolTip href={"/resumes"}>Resumes</ShortToolTip>
+            <ShortToolTip href={"/dashboard/leads"}>Leads</ShortToolTip>
           </TooltipProvider>
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
+        <ModeToggle/>
           <TooltipProvider delayDuration={0}>
             <ShortToolTip href={"/settings"}>Settings</ShortToolTip>
           </TooltipProvider>

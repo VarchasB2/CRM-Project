@@ -25,33 +25,36 @@ model Admin {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  email String @unique
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  email String  @unique
   pwd   String
   image String
-  // leads Leads[]
+  leads Leads[]
+
   @@map("users")
 }
 
-// model Leads {
-//   id    Int    @id @default(autoincrement())
-//   lead_owner String @unique
-//   date DateTime @default(now())
-//   type_of_company String
-//   funnel_stage String
-//   company_name String
-//   region String
-//   country String
-//   contacts Contacts[]
-//   user User @relation(fields: [lead_owner],references: [name])
-// }
-// model Contacts{
-//   id    Int    @id @default(autoincrement())
-//   first_name String
-//   last_name String
-//   designation String
-//   email String
-//   phone_number String
-//   lead Leads @relation(fields: [id],references: [id])
-// }
+model Leads {
+  id              Int           @id @default(autoincrement())
+  owner_id        Int
+  date            DateTime      @default(now())
+  type_of_company String
+  funnel_stage    String
+  company_name    String
+  region          String
+  country         String
+  contacts        AllContacts[]
+  lead_owner      User          @relation(fields: [owner_id], references: [id])
+}
+
+model AllContacts {
+  id           Int    @id @default(autoincrement())
+  first_name   String
+  last_name    String
+  designation  String
+  email        String
+  phone_number String
+  lead_id      Int
+  lead         Leads  @relation(fields: [lead_id], references: [id])
+}

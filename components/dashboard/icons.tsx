@@ -11,5 +11,5 @@ export type Icon = LucideIcon
 export const Icons = {
     dashboard: Home,
     settings: Settings,
-    resumes: Users
+    leads: Users
 }
