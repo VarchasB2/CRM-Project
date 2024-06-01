@@ -50,6 +50,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
+import Link from "next/link";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -116,7 +117,7 @@ export function DataTable<TData, TValue>({
   return (
     <Tabs defaultValue="all">
       <TabsContent value="all">
-        <Card x-chunk="dashboard-06-chunk-0">
+        <Card>
           <CardHeader className="flex flex-row justify-between">
             <div>
               <CardTitle>Leads</CardTitle>
@@ -235,12 +236,15 @@ export function DataTable<TData, TValue>({
                         Export
                       </span>
                     </Button> */}
+                    <Link href={'/dashboard/leads/new-lead'}>
+                    
                   <Button size="sm" className="h-8 gap-1">
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                      Add Product
+                      Add New Lead
                     </span>
                   </Button>
+                    </Link>
                 </div>
               </div>
             </CardTitle>
@@ -264,11 +268,15 @@ export function DataTable<TData, TValue>({
                       // console.log("sIndex",sIndex)
                       // console.log("dIndex",dIndex)
                       if (typeof sIndex === "number" && typeof dIndex === "number") {
-                        const newColumnOrder = [...colOrder]
-                        newColumnOrder.splice(sIndex, 1);
-                        newColumnOrder.splice(dIndex, 0, dragEndObj.draggableId);
-                        console.log("newColumnOrder",newColumnOrder)
-                        setColumnOrder(newColumnOrder);
+                        console.log("sIndex",sIndex)
+                        console.log("dIndex",dIndex)
+                        // colOrder.splice(sIndex, 1);
+                        colOrder.filter((e,i)=>i!==sIndex)
+                        console.log("after splice sIndex",colOrder)
+                        colOrder.splice(dIndex, 0, dragEndObj.draggableId);
+                        console.log("after splice dIndex",colOrder)
+                        console.log("newColumnOrder",colOrder)
+                        setColumnOrder(JSON.parse(JSON.stringify(colOrder)));
                         console.log(columnOrder)
                         
                         
