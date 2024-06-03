@@ -2,12 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
-import { z } from "zod";
+import { number, z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -20,33 +19,13 @@ import {
   regions,
   type_of_companies,
 } from "@/lib/form/form-constants";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, Plus, SquarePlus } from "lucide-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Plus, Trash2 } from "lucide-react";
 import FormComboBox from "./form-combo-box";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import countryList from "react-select-country-list";
-import db from "@/app/modules/db";
-import { get } from "http";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 
 export const formSchema = z.object({
   leadOwner: z.string().min(1, {
@@ -86,6 +65,18 @@ export const formSchema = z.object({
       }),
     })
   ),
+  opportunities: z.array(
+    z.object({
+      description: z.string({
+
+      }).min(1, {
+        message: "Required",
+      }),
+      revenue: z.coerce.number({message: "Enter numerical values only"}).min(1, {
+        message: "Required",
+      }),
+    })
+  ),
 });
 const emptyContact: any = {
   first_name: "",
@@ -94,8 +85,13 @@ const emptyContact: any = {
   email: "",
   phone_number: "",
 };
+const emptyOpportunity: any = {
+  description: "",
+  revenue: "",
+};
+
 export default function CreateLeadForm() {
-  // 1. Define your form.
+  const {toast} = useToast()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -114,56 +110,42 @@ export default function CreateLeadForm() {
           phone_number: "",
         },
       ],
+      opportunities: [],
     },
   });
-  const { fields, append, remove } = useFieldArray({
+  const {
+    fields: contactFields,
+    append: contactAppend,
+    remove: contactRemove,
+  } = useFieldArray({
     ...form,
     name: "contacts",
   });
-  //   console.log(fields);
-  // 2. Define a submit handler.
+  const {
+    fields: opportunityFields,
+    append: opportunityAppend,
+    remove: opportunityRemove,
+  } = useFieldArray({
+    ...form,
+    name: "opportunities",
+  });
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    // console.log(values);
-    // const owners = await (await fetch('http://localhost:3000/api/lead-owners')).json()
-    // const owners = await fetch(`http://localhost:3000/api/lead-owners?name=${encodeURIComponent(values.leadOwner)}`)
-    const leadResponse = await fetch('http://localhost:3000/api/lead-owners',{
-      method: 'POST',
+    const leadResponse = await fetch("http://localhost:3000/api/lead-owners", {
+      method: "POST",
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(values)
+      body: JSON.stringify(values),
+    });
+    toast({
+      title:"Lead created"
     })
-  // if(leadResponse?.status){
-  //   const contactResponse = await fetch('http://localhost:3000/api/all-contacts',{
-  //     method: 'POST',
-  //     headers: {
-  //       'Accept': 'application/json',
-  //       'Content-Type': 'application/json'
-  //     },
-  //     body: JSON.stringify(values)
-  //   })
-  // }
-    // console.log("values",values)
-    // console.log("owners",owners)
-    const res = await fetch('http://localhost:3000/api/leads',{
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(values.leadOwner) 
-    })
-    // const lead = await db.leads.create({
-      
-    // })
     // form.reset();
   }
 
   //   console.log(lead_owners.map((lead_owner:any) => lead_owner.value))
-  console.log(countryList().getLabels())
+  countryList().getLabels();
   return (
     <Card className="p-4">
       <CardHeader className="flex flex-col">
@@ -190,64 +172,6 @@ export default function CreateLeadForm() {
                     command_empty="No lead owners found."
                     width="200px"
                   />
-                  //   <FormItem className="flex flex-col">
-                  //     <FormLabel>Lead Owner</FormLabel>
-                  //     <Popover>
-                  //       <PopoverTrigger asChild>
-                  //         <FormControl>
-                  //           <Button
-                  //             variant="outline"
-                  //             role="combobox"
-                  //             className={cn(
-                  //               "w-[200px] justify-between",
-                  //               !field.value && "text-muted-foreground"
-                  //             )}
-                  //           >
-                  //             {
-                  //             field.value
-                  //               ? lead_owners.find(
-                  //                   (lead_owner) => lead_owner.value === field.value
-                  //                 )?.label
-                  //               :
-                  //               "Select lead owner"}
-                  //             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  //           </Button>
-                  //         </FormControl>
-                  //       </PopoverTrigger>
-                  //       <PopoverContent className="w-[200px] p-0">
-                  //         <Command>
-                  //           <CommandList>
-
-                  //           <CommandInput placeholder="Search lead owner..." />
-                  //           <CommandEmpty>No lead owners found.</CommandEmpty>
-                  //           <CommandGroup>
-                  //             {lead_owners.map((lead_owner:any) => (
-                  //               <CommandItem
-                  //                 value={lead_owner.label}
-                  //                 key={lead_owner.value}
-                  //                 onSelect={() => {
-                  //                   form.setValue("leadOwner", lead_owner.value)
-                  //                 }}
-                  //               >
-                  //                 <Check
-                  //                   className={cn(
-                  //                     "mr-2 h-4 w-4",
-                  //                     lead_owner.value === field.value
-                  //                       ? "opacity-100"
-                  //                       : "opacity-0"
-                  //                   )}
-                  //                 />
-                  //                 {lead_owner.label}
-                  //               </CommandItem>
-
-                  //             ))}
-                  //           </CommandGroup>
-                  //           </CommandList>
-                  //         </Command>
-                  //       </PopoverContent>
-                  //     </Popover>
-                  //     <FormMessage />
-                  //   </FormItem>
                 )}
               />
               <FormField
@@ -341,13 +265,13 @@ export default function CreateLeadForm() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => append(emptyContact)}
+                  onClick={() => contactAppend(emptyContact)}
                 >
                   <Plus />
                 </Button>
               </div>
             </CardTitle>
-            {fields.map((field, index) => (
+            {contactFields.map((field, index) => (
               <div key={field.id} className="space-y-8">
                 <div className="flex flex-row gap-40">
                   <FormField
@@ -399,51 +323,116 @@ export default function CreateLeadForm() {
                     )}
                   />
                 </div>
-                <div key={field.id} className="flex flex-row gap-40">
-                  <FormField
-                    name={`contacts.${index}.email`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Email"
-                            className="w-[200px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    name={`contacts.${index}.phone_number`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone number</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Phone number"
-                            className="w-[200px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
+                <div key={field.id} className="flex flex-row justify-between">
+                  <div className="flex flex-row gap-40">
+                    <FormField
+                      name={`contacts.${index}.email`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Email"
+                              className="w-[200px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      name={`contacts.${index}.phone_number`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone number</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Phone number"
+                              className="w-[200px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  {index !== 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => contactRemove(index)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  )}
                 </div>
+
+                <Separator />
+              </div>
+            ))}
+            <CardTitle>
+              <div className="flex flex-row justify-between">
+                Opportunity
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => opportunityAppend(emptyOpportunity)}
+                >
+                  <Plus />
+                </Button>
+              </div>
+            </CardTitle>
+            {opportunityFields.map((field, index) => (
+              <div key={field.id} className="space-y-8">
+                <FormField
+                  name={`opportunities.${index}.description`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Description" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex flex-row justify-between">
+                  <FormField
+                    name={`opportunities.${index}.revenue`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Revenue</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Revenue"
+                            className="w-[200px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => opportunityRemove(index)}
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
+
                 <Separator />
               </div>
             ))}
 
-            {/* <div className="py-6">
-              <Button type="button" onClick={() => append(emptyContact)}>
-                Add new contact
-              </Button>
-            </div> */}
             <div className="flex flex-row justify-center">
-              <Button type="submit" className="px-6">Submit</Button>
+              <Button type="submit" className="px-6">
+                Submit
+              </Button>
             </div>
           </form>
         </Form>

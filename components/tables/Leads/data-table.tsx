@@ -51,10 +51,13 @@ import {
 } from "@/components/ui/card";
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
 import Link from "next/link";
+import { DatePickerWithRange } from "./date-picker-with-range";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
+  firstDate: Date
+  lastDate: Date
 }
 function getDropDownValues<T>(data: T[], selector: string) {
   const uniqueArray = [
@@ -62,7 +65,7 @@ function getDropDownValues<T>(data: T[], selector: string) {
       data.map((item: any) => {
         return selector === "lead_owner_name"
           ? item["lead_owner"].name
-          : item[selector];
+          : item[selector]
       })
     ),
   ];
@@ -73,7 +76,7 @@ function getDropDownValues<T>(data: T[], selector: string) {
       label: listItem,
     };
   });
-  return optionsArray;
+  return optionsArray
 }
 export const getStyleHorizontalLock = (style:any) => style?.transform
   ? ({ ...style, transform: `translate(${style.transform.split(',')[0].split('(').pop()}, 0px)` })
@@ -81,6 +84,8 @@ export const getStyleHorizontalLock = (style:any) => style?.transform
 export function DataTable<TData, TValue>({
   columns,
   data,
+  firstDate,
+  lastDate
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -113,6 +118,7 @@ export function DataTable<TData, TValue>({
       columnOrder
     },
   });
+  
   const currentColOrder = React.useRef<any>();  
   return (
     <Tabs defaultValue="all">
@@ -137,6 +143,7 @@ export function DataTable<TData, TValue>({
                     />
                   )}
                 </div>
+                <DatePickerWithRange firstDate={firstDate} lastDate={lastDate}/>
                 <div className="flex flex-col">
                   {table.getColumn("funnel_stage") && (
                     <DataTableFacetedFilter

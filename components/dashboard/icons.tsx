@@ -4,12 +4,13 @@ import {LucideIcon, Home,
     Package2,
     Settings,
     ShoppingCart,
-    Users,} from "lucide-react";
+    Users,
+    TowerControl,} from "lucide-react";
 
 export type Icon = LucideIcon
 
 export const Icons = {
     dashboard: Home,
     settings: Settings,
-    leads: Users
+    leads: TowerControl
 }

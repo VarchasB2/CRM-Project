@@ -46,10 +46,6 @@ export const columns: ColumnDef<Leads>[] = [
     id:"lead_owner_name",
     accessorKey: "lead_owner.name",
     header: "Lead Owner",
-    filterFn: (row, id, value) => {
-      // console.log(id)
-      return value.includes(row.getValue(id));
-    },
   },
   {
     id: "date",

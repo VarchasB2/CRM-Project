@@ -17,8 +17,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Filter, Square, SquareCheck } from "lucide-react";
+
+import {ListFilter, Square, SquareCheck } from "lucide-react";
 
 interface DataTableFacetedFilter<TData, TValue> {
   column?: Column<TData, TValue>;
@@ -42,7 +42,7 @@ export function DataTableFacetedFilter<TData, TValue>({
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 border-dashed">
-          <Filter className="w-4 h-4 mr-2" />
+          <ListFilter className="w-4 h-4 mr-2" />
           {title}
           {/* {selectedValues?.size > 0 && 
               <div className="space-x-1 lg:flex">

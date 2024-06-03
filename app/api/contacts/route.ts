@@ -13,13 +13,13 @@ export async function POST(req: Request) {
         if (typeof contact !== 'object') {
             throw new Error('Each contact must be an object');
         }
-        return { ...contact, lead_id: obj.lead_id };
+        return { lead_owner:obj.lead_owner,date:obj.date,...contact,account_id:obj.account_id };
     })
   
-    const result = await db.allContacts.createMany({
+    const result = await db.contact.createMany({
         data: contacts
     })
-    return Response.json({ data: result });
+    return Response.json({ data: {} });
   } catch (error) {
     console.log("error", error);
   }

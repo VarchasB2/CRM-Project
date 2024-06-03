@@ -58,3 +58,37 @@ model AllContacts {
   lead_id      Int
   lead         Leads  @relation(fields: [lead_id], references: [id])
 }
+
+model Account {
+  id              Int           @id @default(autoincrement())
+  lead_owner      String
+  date            DateTime
+  type_of_company String
+  funnel_stage    String
+  company_name    String
+  region          String
+  country         String
+  contacts        Contact[]
+  opportunities   Opportunity[]
+}
+
+model Contact {
+  id           Int      @id @default(autoincrement())
+  lead_owner   String
+  date         DateTime
+  first_name   String
+  last_name    String
+  designation  String
+  email        String
+  phone_number String
+  account_id   Int
+  account      Account  @relation(fields: [account_id], references: [id])
+}
+
+model Opportunity {
+  id          Int     @id @default(autoincrement())
+  description String
+  revenue     BigInt
+  account_id  Int
+  account     Account @relation(fields: [account_id], references: [id])
+}

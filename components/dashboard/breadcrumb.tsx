@@ -13,7 +13,8 @@ import Link from "next/link";
 
 const BreadCrumb = () => {
   const paths: string = usePathname();
-  const pathNames: string[] = paths.split("/").filter((path) => path);
+  let pathNames: string[] = paths.split("/").filter((path) => path);
+  pathNames = pathNames.map((path)=>path.replace("-", " "))
   return (
     <Breadcrumb>
       <BreadcrumbList>

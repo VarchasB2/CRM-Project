@@ -1,9 +1,19 @@
-export const GET  = async()=>{
+import db from "@/app/modules/db"
 
-}
-
-export const POST = async (req:Request)=>{
-    const resBody = await req.json()
-    // console.log(resBody)
-   return Response.json(resBody)
+export async function GET(){
+    try{
+        let first_date = await db.leads.findFirst({
+            orderBy:{
+                date: 'asc'
+            }
+        })
+        let last_date = await db.leads.findFirst({
+            orderBy:{
+                date: 'desc'
+            }
+        })
+        return Response.json({data:{first_date,last_date}})
+    }catch(error){
+        console.log(error)
+    }
 }
