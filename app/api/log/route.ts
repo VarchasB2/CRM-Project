@@ -26,7 +26,7 @@ export async function POST(req: NextApiRequest) {
 			});
 
 			return {
-				Description: `On ${readableDate}, ${lead.company_name}, a ${lead.type_of_company} based in ${lead.country} in the ${lead.region} region, reached the ${lead.funnel_stage} in the funnel was created....`,
+				Description: `  Created On  ${readableDate}, at ${lead.funnel_stage} stage, type ${lead.type_of_company} , ${lead.company_name}, Country ${lead.country} , ${lead.region} .`,
 				date: date,
 			};
 		});

@@ -19,15 +19,9 @@ interface FunnelData {
 	date: Date;
 }
 
-import { DatePickerWithRange } from "@/components/logs/DatePickerWithRange";
-
-export default function LogDetails() {
+export default function LogDetails({ date }: { date: any }) {
 	const [data, setData] = React.useState<FunnelData[]>([]);
 	const [core, setCore] = React.useState<FunnelData[]>([]);
-	const [date, setDate] = React.useState<DateRange | undefined>({
-		from: undefined,
-		to: undefined,
-	});
 
 	React.useEffect(() => {
 		const fetchData = async () => {
@@ -68,50 +62,19 @@ export default function LogDetails() {
 
 	return (
 		<div className=" w-full ">
-			<div className={cn("grid gap-2 m-5")}>
-				<Popover>
-					<PopoverTrigger asChild>
-						<Button
-							id="date"
-							variant={"outline"}
-							className={cn(
-								"w-[300px] justify-start text-left font-normal",
-								!date && "text-muted-foreground",
-							)}>
-							<CalendarIcon className="mr-2 h-4 w-4" />
-							{date?.from ? (
-								date.to ? (
-									<>
-										{format(date.from, "LLL dd, y")} -{" "}
-										{format(date.to, "LLL dd, y")}
-									</>
-								) : (
-									format(date.from, "LLL dd, y")
-								)
-							) : (
-								<span>Pick a date</span>
-							)}
-						</Button>
-					</PopoverTrigger>
-					<PopoverContent className="w-auto p-0" align="start">
-						<Calendar
-							initialFocus
-							mode="range"
-							defaultMonth={date?.from}
-							selected={date}
-							onSelect={setDate}
-							numberOfMonths={2}
-						/>
-					</PopoverContent>
-				</Popover>
-			</div>
-			{data?.map((lead: FunnelData) => {
-				return (
-					<div className=" rounded-lg  border p-3  m-4 ">
-						<h1 className=" font-mono  text-wrap "> {lead.Description}</h1>
-					</div>
-				);
-			})}
+			{data.length > 0 ? (
+				data?.map((lead: FunnelData) => {
+					return (
+						<div className=" rounded-lg   p-3  m-4 ">
+							<h1 className=" font-mono  text-wrap "> {lead.Description}</h1>
+						</div>
+					);
+				})
+			) : (
+				<div className="  h-[75vh] flex justify-center items-center">
+					Loading..
+				</div>
+			)}
 		</div>
 	);
 }
