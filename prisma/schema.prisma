@@ -14,22 +14,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Admin {
-  id    Int    @id @default(autoincrement())
-  name  String
-  email String @unique
-  pwd   String
-  image String
-
-  @@map("admins")
-}
-
 model User {
   id    Int     @id @default(autoincrement())
   name  String  @unique
   email String  @unique
   pwd   String
   image String
+  role  String
   leads Leads[]
 
   @@map("users")
@@ -45,6 +36,7 @@ model Leads {
   region          String
   country         String
   contacts        AllContacts[]
+  account         Account?
   lead_owner      User          @relation(fields: [owner_id], references: [id])
 }
 
@@ -53,15 +45,14 @@ model AllContacts {
   first_name   String
   last_name    String
   designation  String
-  email        String
+  email        String @unique
   phone_number String
-  lead_id      Int
-  lead         Leads  @relation(fields: [lead_id], references: [id])
+  lead         Leads  []
 }
 
 model Account {
   id              Int           @id @default(autoincrement())
-  lead_owner      String
+  lead_id         Int @unique
   date            DateTime
   type_of_company String
   funnel_stage    String
@@ -70,25 +61,25 @@ model Account {
   country         String
   contacts        Contact[]
   opportunities   Opportunity[]
+  lead            Leads         @relation(fields: [lead_id], references: [id])
 }
 
 model Contact {
-  id           Int      @id @default(autoincrement())
-  lead_owner   String
-  date         DateTime
+  id           Int           @id @default(autoincrement())
   first_name   String
   last_name    String
   designation  String
-  email        String
+  email        String        @unique
   phone_number String
-  account_id   Int
-  account      Account  @relation(fields: [account_id], references: [id])
+  opportunity  Opportunity[]
+  account      Account[]
 }
 
 model Opportunity {
-  id          Int     @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   description String
   revenue     BigInt
   account_id  Int
-  account     Account @relation(fields: [account_id], references: [id])
+  contact     Contact[]
+  account     Account   @relation(fields: [account_id], references: [id])
 }

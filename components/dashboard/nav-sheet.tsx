@@ -23,11 +23,11 @@ const NavSheet = () => {
                   Dashboard
                 </Link>
                 <Link
-                  href="/resumes"
+                  href="/dashboard/leads"
                   className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                 >
                   <Users className="h-5 w-5" />
-                  Resumes
+                  Leads
                 </Link>
                 <Link
                   href="/settings"

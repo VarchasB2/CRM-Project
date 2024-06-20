@@ -11,6 +11,10 @@ import { Button } from "../../ui/button";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { AllContacts, User } from "@prisma/client";
 import ContactRow from "../all-contacts/contact-row";
+import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format } from "url";
 
 export type Leads = {
   id: number;
@@ -46,6 +50,10 @@ export const columns: ColumnDef<Leads>[] = [
     id:"lead_owner_name",
     accessorKey: "lead_owner.name",
     header: "Lead Owner",
+    filterFn: (row, id, value) => {
+      // console.log(value.includes(row.getValue(id)))
+      return value.includes(row.getValue(id));
+    },
   },
   {
     id: "date",
@@ -53,8 +61,21 @@ export const columns: ColumnDef<Leads>[] = [
     header: "Date",
     cell: ({ row }) => {
       const date = new Date(row.getValue("date"));
-      const formatted = date.toLocaleString("en-In");
-      return <>{formatted}</>;
+      const formatted = date.toLocaleDateString("en-In");
+      return formatted
+    },
+    filterFn: (row, id, value) => {
+      if(value.from === undefined && value.to!== undefined)
+        value.from = value.to
+      else
+      if(value.from !== undefined && value.to=== undefined)
+        value.to = value.from
+      const rowVal:Date = row.getValue(id)
+      value.from.setHours(0,0,0,0)
+      rowVal.setHours(0,0,0,0)
+      value.to.setHours(0,0,0,0)
+      const filterVal =value.from<=rowVal&& value.to>=rowVal
+      return (filterVal)
     },
   },
   {
@@ -77,6 +98,9 @@ export const columns: ColumnDef<Leads>[] = [
     id: "company_name",
     accessorKey: "company_name",
     header: "Company",
+    // filterFn: (row, id, value) => {
+    //   return value.includes(row.getValue(id));
+    // },
   },
   {
     id: "region",
@@ -148,9 +172,19 @@ export const columns: ColumnDef<Leads>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    cell: function CellComponent({row}) {
+      const router = useRouter()
+      // const params = new URLSearchParams()
+      // params.set("Row",JSON.stringify(row))
+      // console.log('row',row)
+      // console.log(typeof row)
+      const url = format({
+        pathname:'/dashboard/leads/edit-lead',
+        query: {id:JSON.stringify(row.original.id)}
+      })
       return (
         <DropdownMenu>
+          
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
               <span className="sr-only">Open menu</span>
@@ -159,8 +193,9 @@ export const columns: ColumnDef<Leads>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>View resume</DropdownMenuItem>
-            <DropdownMenuItem>Archive</DropdownMenuItem>
+            <Separator/>
+            <DropdownMenuItem className="cursor-pointer" onClick={()=>router.push(url)}>Edit</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

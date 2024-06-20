@@ -28,6 +28,21 @@ const DashboardNav = () => {
           <TooltipProvider delayDuration={0}>
             <ShortToolTip href={"/dashboard/leads"}>Leads</ShortToolTip>
           </TooltipProvider>
+          <TooltipProvider delayDuration={0}>
+            <ShortToolTip href={"/dashboard/contact-lookup"}>Contact Lookup</ShortToolTip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={0}>
+            <ShortToolTip href={"/dashboard/funnel"}>Funnel Lookup</ShortToolTip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={0}>
+            <ShortToolTip href={"/dashboard/opportunity-lookup"}>Opportunity Lookup</ShortToolTip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={0}>
+            <ShortToolTip href={"/dashboard/revenue-lookup"}>Revenue Lookup</ShortToolTip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={0}>
+            <ShortToolTip href={"/dashboard/customer-lookup"}>Customer Lookup</ShortToolTip>
+          </TooltipProvider>
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
         <ModeToggle/>

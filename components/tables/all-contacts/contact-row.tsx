@@ -9,6 +9,17 @@ const ContactRow = ({
   contacts: AllContacts[];
   field: any;
 }) => {
+  if (field==='full_name'){
+    return(
+      <div >
+          {contacts.map((row:any)=>{
+              return <div key={row.id} className="p-1">
+                  {`${row['first_name']} ${row['last_name']}`}
+              </div>
+          })}
+      </div>
+    )
+  }
 return(
     <div >
         {contacts.map((row:any)=>{

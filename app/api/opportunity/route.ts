@@ -14,7 +14,7 @@ export async function POST(req: Request) {
             throw new Error('Each opportunity must be an object');
         }
         console.log("contact",opportunity)
-        return {...opportunity,account_id:obj.account_id };
+        return {...opportunity,lead_owner:obj.lead_owner,account_id:obj.account_id, date:obj.date,type_of_company:obj.type_of_company,company_name:obj.company_name };
     })
   
     const result = await db.opportunity.createMany({

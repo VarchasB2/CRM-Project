@@ -26,9 +26,25 @@ import { Separator } from "@/components/ui/separator";
 import countryList from "react-select-country-list";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { getLeads } from "@/app/dashboard/leads/page";
+import { useRouter } from "next/navigation";
+import { Dialog } from "@radix-ui/react-dialog";
+import {
+  AlertDialog,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ToastAction } from "@/components/ui/toast";
+import React from "react";
 
 export const formSchema = z.object({
-  leadOwner: z.string().min(1, {
+  lead_owner: z.string().min(1, {
     message: "Required",
   }),
   type_of_company: z.string().min(1, {
@@ -67,17 +83,23 @@ export const formSchema = z.object({
   ),
   opportunities: z.array(
     z.object({
-      description: z.string({
-
-      }).min(1, {
+      description: z.string({}).min(1, {
         message: "Required",
       }),
-      revenue: z.coerce.number({message: "Enter numerical values only"}).min(1, {
-        message: "Required",
-      }),
+      revenue: z.coerce
+        .number({ message: "Enter numerical values only" })
+        .min(1, {
+          message: "Required",
+        }),
+      contact_email: z.array(
+        z.string({}).min(1, {
+          message: "Required",
+        })
+      ),
     })
   ),
 });
+
 const emptyContact: any = {
   first_name: "",
   last_name: "",
@@ -88,31 +110,51 @@ const emptyContact: any = {
 const emptyOpportunity: any = {
   description: "",
   revenue: "",
+  contact_email: "",
 };
 
-export default function CreateLeadForm() {
-  const {toast} = useToast()
+export default function CreateLeadForm({ obj }: { obj?: any }) {
+  const { toast } = useToast();
+  if (obj !== undefined && obj.account !== null && obj.account.opportunities.length > 0)
+    obj.account.opportunities.map((opportunity: any) => {
+      opportunity.revenue = Number(opportunity.revenue);
+    });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      leadOwner: "",
-      type_of_company: "",
-      funnel_stage: "",
-      company_name: "",
-      region: "",
-      country: "",
-      contacts: [
-        {
-          first_name: "",
-          last_name: "",
-          designation: "",
-          email: "",
-          phone_number: "",
-        },
-      ],
-      opportunities: [],
+      lead_owner: obj === undefined ? "" : obj.lead_owner.name,
+      type_of_company: obj === undefined ? "" : obj.type_of_company,
+      funnel_stage: obj === undefined ? "" : obj.funnel_stage,
+      company_name: obj === undefined ? "" : obj.company_name,
+      region: obj === undefined ? "" : obj.region,
+      country: obj === undefined ? "" : countryList().getValue(obj.country),
+      contacts:
+        obj === undefined
+          ? [
+              {
+                first_name: "",
+                last_name: "",
+                designation: "",
+                email: "",
+                phone_number: "",
+              },
+            ]
+          : obj.contacts,
+      opportunities:
+        obj === undefined || obj.account === null || obj.account.opportunities.length === 0
+          ? []
+          : obj.account.opportunities.map((opportunity: any) => {
+              return {
+                description: opportunity.description,
+                revenue: opportunity.revenue,
+                contact_email: opportunity.contact.map(
+                  (contact: any) => contact.email
+                ),
+              };
+            }),
     },
   });
+  console.log(form.getValues("opportunities"));
   const {
     fields: contactFields,
     append: contactAppend,
@@ -129,48 +171,94 @@ export default function CreateLeadForm() {
     ...form,
     name: "opportunities",
   });
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    const leadResponse = await fetch("http://localhost:3000/api/lead-owners", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(values),
-    });
-    toast({
-      title:"Lead created"
-    })
-    // form.reset();
-  }
+  const router = useRouter();
 
-  //   console.log(lead_owners.map((lead_owner:any) => lead_owner.value))
+  const [isOpenAlert, setOpenAlert] = React.useState(false);
+  
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (obj === undefined) {
+      const ifExistResult = await fetch("/api/unique-leads", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+      // console.log(await ifExistResult.json())
+      const checkResults = await ifExistResult.json();
+      if (checkResults[0].length !== 0 || checkResults[1].length !== 0) {
+        setOpenAlert(true);
+      } else {
+        createLead(values);
+      }
+    } else createLead(values);
+  }
+  
+  async function createLead(values: z.infer<typeof formSchema>) {
+    try {
+      setOpenAlert(false);
+      const method = obj === undefined ? "POST" : "PUT";
+      const response = await fetch("http://localhost:3000/api/lead-owners", {
+        method: method,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body:
+          obj === undefined
+            ? JSON.stringify(values)
+            : JSON.stringify({ ...values, original: obj }),
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to ${obj ? "update" : "create"} lead.`);
+      }
+      const data = await response.json();
+      toast({
+        title: `${obj ? "Lead updated" : "Lead created"} successfully`,
+      });
+      form.reset();
+      router.refresh();
+      
+      setTimeout(()=>{
+        window.location.reload();
+      },2000)
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: `Failed to ${obj ? "update" : "create"} lead.`,
+        variant: "destructive",
+      });
+    }
+  }
   countryList().getLabels();
+  const width = "min-w-80";
+  const contactList = form.watch('contacts')
   return (
     <Card className="p-4">
       <CardHeader className="flex flex-col">
-        <CardTitle>Add new lead</CardTitle>
+        {obj===undefined?<CardTitle>Add new lead </CardTitle>:<CardTitle>Edit lead </CardTitle>}
         {/* <Separator /> */}
       </CardHeader>
 
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="flex flex-row gap-40">
+            <div className="flex flex-row gap-10">
               <FormField
                 control={form.control}
-                name="leadOwner"
+                name="lead_owner"
                 render={({ field }) => (
                   <FormComboBox
                     field={field}
                     list={lead_owners}
                     form={form}
-                    form_value="leadOwner"
+                    form_value="lead_owner"
                     form_label="Lead Owner"
                     text="Select Lead Owner"
                     placeholder="Search lead owner..."
                     command_empty="No lead owners found."
-                    width="200px"
+                    className="min-w-80"
                   />
                 )}
               />
@@ -187,7 +275,7 @@ export default function CreateLeadForm() {
                     text="Select Type of Company"
                     placeholder="Search type of company..."
                     command_empty="No type of company found."
-                    width="275px"
+                    className={width}
                   />
                 )}
               />
@@ -204,7 +292,7 @@ export default function CreateLeadForm() {
                     text="Select Funnel Stage"
                     placeholder="Search funnel stage..."
                     command_empty="No funnel stage found."
-                    width="250px"
+                    className={width}
                   />
                 )}
               />
@@ -222,7 +310,7 @@ export default function CreateLeadForm() {
                 </FormItem>
               )}
             />
-            <div className="flex flex-row gap-40">
+            <div className="flex flex-row gap-10">
               <FormField
                 control={form.control}
                 name="region"
@@ -236,7 +324,7 @@ export default function CreateLeadForm() {
                     text="Select Region"
                     placeholder="Search region..."
                     command_empty="No region found."
-                    width="200px"
+                    className={width}
                   />
                 )}
               />
@@ -253,7 +341,7 @@ export default function CreateLeadForm() {
                     text="Select Country"
                     placeholder="Search country..."
                     command_empty="No country found."
-                    width="375px"
+                    className={width}
                   />
                 )}
               />
@@ -273,7 +361,7 @@ export default function CreateLeadForm() {
             </CardTitle>
             {contactFields.map((field, index) => (
               <div key={field.id} className="space-y-8">
-                <div className="flex flex-row gap-40">
+                <div className="flex flex-row gap-10">
                   <FormField
                     name={`contacts.${index}.first_name`}
                     render={({ field }) => (
@@ -282,7 +370,7 @@ export default function CreateLeadForm() {
                         <FormControl>
                           <Input
                             placeholder="Contact First Name"
-                            className="w-[200px]"
+                            className={width}
                             {...field}
                           />
                         </FormControl>
@@ -298,7 +386,7 @@ export default function CreateLeadForm() {
                         <FormControl>
                           <Input
                             placeholder="Contact Last Name"
-                            className="w-[200px]"
+                            className={width}
                             {...field}
                           />
                         </FormControl>
@@ -314,7 +402,7 @@ export default function CreateLeadForm() {
                         <FormControl>
                           <Input
                             placeholder="Designation"
-                            className="w-[200px]"
+                            className={width}
                             {...field}
                           />
                         </FormControl>
@@ -325,7 +413,7 @@ export default function CreateLeadForm() {
                 </div>
 
                 <div key={field.id} className="flex flex-row justify-between">
-                  <div className="flex flex-row gap-40">
+                  <div className="flex flex-row gap-10">
                     <FormField
                       name={`contacts.${index}.email`}
                       render={({ field }) => (
@@ -334,7 +422,7 @@ export default function CreateLeadForm() {
                           <FormControl>
                             <Input
                               placeholder="Email"
-                              className="w-[200px]"
+                              className={width}
                               {...field}
                             />
                           </FormControl>
@@ -350,7 +438,7 @@ export default function CreateLeadForm() {
                           <FormControl>
                             <Input
                               placeholder="Phone number"
-                              className="w-[200px]"
+                              className={width}
                               {...field}
                             />
                           </FormControl>
@@ -400,22 +488,53 @@ export default function CreateLeadForm() {
                   )}
                 />
                 <div className="flex flex-row justify-between">
-                  <FormField
-                    name={`opportunities.${index}.revenue`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Revenue</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Revenue"
-                            className="w-[200px]"
-                            {...field}
+                  <div className="flex flex-row gap-10">
+                    <FormField
+                      name={`opportunities.${index}.revenue`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Revenue</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Revenue"
+                              className={width}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {/* <FormComboBox/> */}
+                    <FormField
+                      control={form.control}
+                      name={`opportunities.${index}.contact_email`}
+                      render={({ field }) => {
+                        console.log("field in form", field.value);
+                        return (
+                          <FormComboBox
+                            field={field}
+                            multiSelect={true}
+                            list={
+                              contactList
+                              .filter((contact) => contact.email !== "")
+                              .map((contact) => ({
+                                label: contact.email,
+                                value: contact.email,
+                              }))
+                            }
+                            form={form}
+                            form_value={`opportunities.${index}.contact_email`}
+                            form_label="Contact Email"
+                            text="Select contact"
+                            placeholder="Search contact..."
+                            command_empty="No contact found."
+                            className={width}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        );
+                      }}
+                    />
+                  </div>
                   <Button
                     type="button"
                     variant="ghost"
@@ -434,6 +553,34 @@ export default function CreateLeadForm() {
                 Submit
               </Button>
             </div>
+            <AlertDialog open={isOpenAlert}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Record exists</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {`Record with company name: ${form.getValues(
+                      "company_name"
+                    )} or contact with email(s): ${form
+                      .getValues("contacts")
+                      .map(
+                        (e) => e.email
+                      )} already exist. Do you still want to add this lead?`}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogAction onClick={form.handleSubmit(createLead)}>
+                    Continue
+                  </AlertDialogAction>
+                  <AlertDialogCancel
+                    onClick={() => {
+                      setOpenAlert(false);
+                    }}
+                  >
+                    Cancel
+                  </AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </form>
         </Form>
       </CardContent>

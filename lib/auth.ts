@@ -2,9 +2,10 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import db from "@/app/modules/db";
+import { PrismaClient } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db as unknown as PrismaClient),
   session: {
     strategy: "jwt",
   },
@@ -29,7 +30,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const existingUser = await db.admin.findUnique({
+        const existingUser = await db.user.findUnique({
           where: { email: credentials?.email },
         });
         if (!existingUser) {
