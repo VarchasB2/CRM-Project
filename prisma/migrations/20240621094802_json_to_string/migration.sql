@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "History" ALTER COLUMN "account_data" SET DATA TYPE TEXT,
+ALTER COLUMN "lead_data" SET DATA TYPE TEXT;

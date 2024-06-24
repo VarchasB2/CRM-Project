@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface FormComboBoxProps {
   field: any;
@@ -48,57 +49,17 @@ const FormComboBox = ({
   multiSelect = false,
 }: FormComboBoxProps) => {
   const [open, setOpen] = useState(false);
-  const [selectedValues, setSelectedValues] = useState<string[]>(form.getValues(form_value));
-  // console.log(list)
-  // console.log('form obj in combo',form.getValues(form_value))
-  // Effect to synchronize form value with selectedValues on mount and update
-  // useEffect(() => {
-  //   if (!multiSelect && field.value !== selectedValues[0]) {
-  //     setSelectedValues([field.value]);
-  //   }
-  //   else if (multiSelect && !selectedValues.includes(field.value)) {
-  //     setSelectedValues([...selectedValues, field.value]);
-  //   }
-  // }, [field.value, multiSelect,selectedValues]);
-  // useEffect(() => {
-  //   if (!multiSelect && field.value !== selectedValues[0]) {
-  //     setSelectedValues([field.value.toString()]);
-  //   } else if (
-  //     multiSelect &&
-  //     !selectedValues.includes(field.value.toString())
-  //   ) {
-  //     // console.log('selectedValues.includes(field.value.toString()',selectedValues.includes(field.value.toString()))
-  //     setSelectedValues((prevValues) => {
-  //       // console.log('USE EFFECT PREV VALUES',prevValues)
-  //       return [...prevValues.filter((n: any) => n), field.value.toString()];
-  //     });
-  //   }
-  // }, [field.value, multiSelect, selectedValues]);
-
-  // Function to toggle selected values
-  // const toggleSelectedValues = (item: any) => {
-  //   const newValue = item.value;
-  //   let updatedValues: string[];
-
-  //   if (multiSelect) {
-  //     if (selectedValues.includes(newValue)) {
-  //       updatedValues = selectedValues.filter((value) => value !== newValue);
-  //     } else {
-  //       updatedValues = [...selectedValues, newValue];
-  //     }
-  //   } else {
-  //     updatedValues = [newValue];
-  //   }
-
-  //   setSelectedValues(updatedValues);
-  //   form.setValue(form_value, multiSelect ? updatedValues : newValue);
-  //   setOpen(false);
-  // };
-  // console.log('FORM VALUE',form_label)
+  const [selectedValues, setSelectedValues] = useState<string[]>(
+    form.getValues(form_value)
+    
+  );
+  // console.log('FORM VALUE',selectedValues)
   const toggleSelectedValues = (item: any) => {
+    // console.log('TYPEOF ITEM',typeof item)
+
     const itemValue = item.value.toString();
     let updatedValues: string[];
-
+    // console.log(selectedValues)
     if (selectedValues.includes(itemValue)) {
       // Item is already selected, so remove it
       updatedValues = selectedValues.filter((value) => value !== itemValue);
@@ -112,16 +73,7 @@ const FormComboBox = ({
     form.setValue(form_value, multiSelect ? updatedValues : itemValue);
     setOpen(false);
   };
-
-  // Function to determine if an item is selected
-  // const isSelected = (item: any) => {
-  //   const itemValue = item.value.toString(); // Ensure item.value is treated as a string
-  //   if (multiSelect) {
-  //     return selectedValues.includes(itemValue);
-  //   } else {
-  //     return itemValue === field.value;
-  //   }
-  // };
+  
   const isSelected = (item: any) => {
     const itemValue = item.value.toString();
     if (multiSelect) {
@@ -134,40 +86,17 @@ const FormComboBox = ({
   // Display selected label(s)
   const selectedLabels = multiSelect
     ? list
-        .filter((item: any) => { 
-          // console.log('ITEM',item)
-          // console.log('selectedValues.includes(item.value)',selectedValues.includes(item.value))
-          // console.log('selectedValues',selectedValues)
-          return selectedValues.includes(item.value)})
+        .filter((item: any) => {
+          return selectedValues.includes(item.value);
+        })
         .map((item: any) => item.label)
         .join(", ") || text
     : list.find((item: any) => {
-      return item.value === field.value;
-    })?.label || text;
-  // console.log('selectedLabels',selectedLabels)
-  // let selectedLabels = ''
-  // let selectedLabelList = []
-  // if (multiSelect) {
+        return item.value === field.value;
+      })?.label || text;
 
-  //    selectedLabelList =
-  //     list
-  //       .filter((item: any) => {
-  //         console.log("FILTER ITEM", item,selectedValues.includes(item.value));
-  //         return selectedValues.includes(item.value);
-  //       })
-  //       .map((item: any) => {
-  //         return item.label;
-  //       })
-  //     selectedLabels = selectedLabelList.join(", ") || text;
-  //     console.log(selectedLabels, selectedLabelList)
-  // } else {
-  //    selectedLabels =
-  //     list.find((item: any) => {
-  //       return item.value === field.value;
-  //     })?.label || text;
-  // }
   return (
-    <FormItem className="flex flex-col mt-auto gap-1">
+    <FormItem className="flex flex-col mt-auto gap-1 min-w-full sm:min-w-80">
       <FormLabel>{form_label}</FormLabel>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -192,22 +121,24 @@ const FormComboBox = ({
               <CommandInput placeholder={placeholder} />
               <CommandEmpty>{command_empty}</CommandEmpty>
               <CommandGroup>
-                {list.map((item: any, index: number) => (
-                  <CommandItem
-                    value={item.label}
-                    key={`${item.value} ${index}`}
-                    onSelect={() => toggleSelectedValues(item)}
-                    className="cursor-pointer"
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        isSelected(item) ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {item.label}
-                  </CommandItem>
-                ))}
+                {list.map((item: any, index: number) => {
+                  return (
+                    <CommandItem
+                      value={item.label}
+                      key={`${item.value} ${index}`}
+                      onSelect={() => toggleSelectedValues(item)}
+                      className="cursor-pointer"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          isSelected(item) ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {item.label}
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </Command>

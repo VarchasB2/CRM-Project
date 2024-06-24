@@ -42,6 +42,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ToastAction } from "@/components/ui/toast";
 import React from "react";
+import { isValidPhoneNumber } from "react-phone-number-input";
+import { PhoneInput } from "./phone-number-input";
+import { User } from "@prisma/client";
+import { useCurrency } from "@/Providers/currency-provider";
 
 export const formSchema = z.object({
   lead_owner: z.string().min(1, {
@@ -73,12 +77,18 @@ export const formSchema = z.object({
       designation: z.string().min(1, {
         message: "Required",
       }),
-      email: z.string().min(1, {
-        message: "Required",
-      }),
-      phone_number: z.string().min(1, {
-        message: "Required",
-      }),
+      email: z
+        .string()
+        .min(1, {
+          message: "Required",
+        })
+        .email("Enter a vaild email"),
+      phone_number: z
+        .string()
+        .min(1, {
+          message: "Required",
+        })
+        .refine(isValidPhoneNumber, { message: "Invalid phone number" }),
     })
   ),
   opportunities: z.array(
@@ -91,10 +101,16 @@ export const formSchema = z.object({
         .min(1, {
           message: "Required",
         }),
+      currency: z.string().min(1, {
+        message: "Required",
+      }),
       contact_email: z.array(
-        z.string({}).min(1, {
-          message: "Required",
-        })
+        z
+          .string({})
+          .min(1, {
+            message: "Required",
+          })
+          .email("Enter a vaild email")
       ),
     })
   ),
@@ -110,19 +126,33 @@ const emptyContact: any = {
 const emptyOpportunity: any = {
   description: "",
   revenue: "",
+  currency: "USD",
   contact_email: "",
 };
 
-export default function CreateLeadForm({ obj }: { obj?: any }) {
+export default function CreateLeadForm({
+  obj,
+  users,
+  currentUser,
+}: {
+  obj?: any;
+  users: any;
+  currentUser: string;
+}) {
   const { toast } = useToast();
-  if (obj !== undefined && obj.account !== null && obj.account.opportunities.length > 0)
+  const {convertToUSD,convertFromUSD} = useCurrency()
+  if (
+    obj !== undefined &&
+    obj.account !== null &&
+    obj.account.opportunities.length > 0
+  )
     obj.account.opportunities.map((opportunity: any) => {
       opportunity.revenue = Number(opportunity.revenue);
     });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      lead_owner: obj === undefined ? "" : obj.lead_owner.name,
+      lead_owner: obj === undefined ? currentUser : obj.lead_owner.name,
       type_of_company: obj === undefined ? "" : obj.type_of_company,
       funnel_stage: obj === undefined ? "" : obj.funnel_stage,
       company_name: obj === undefined ? "" : obj.company_name,
@@ -141,12 +171,15 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
             ]
           : obj.contacts,
       opportunities:
-        obj === undefined || obj.account === null || obj.account.opportunities.length === 0
+        obj === undefined ||
+        obj.account === null ||
+        obj.account.opportunities.length === 0
           ? []
           : obj.account.opportunities.map((opportunity: any) => {
               return {
                 description: opportunity.description,
-                revenue: opportunity.revenue,
+                revenue: convertFromUSD(opportunity.revenue),
+                currency: opportunity.currency==='INR'?'INR':'USD',
                 contact_email: opportunity.contact.map(
                   (contact: any) => contact.email
                 ),
@@ -154,7 +187,7 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
             }),
     },
   });
-  console.log(form.getValues("opportunities"));
+  // console.log(form.getValues("opportunities"));
   const {
     fields: contactFields,
     append: contactAppend,
@@ -174,7 +207,25 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
   const router = useRouter();
 
   const [isOpenAlert, setOpenAlert] = React.useState(false);
-  
+
+  // React.useEffect(() => {
+  //   const currencyValues = form.watch('opportunities');
+  //   currencyValues.forEach((opportunity:any, index:any) => {
+  //     if (opportunity.currency === 'INR') {
+  //       const convertedRevenue = convertFromUSD(opportunity.revenue);
+  //       console.log('USD TO INR',convertedRevenue)
+  //       form.setValue(`opportunities.${index}.revenue`, convertedRevenue);
+  //       console.log(form.getValues(`opportunities.${index}.revenue`))
+  //     }
+  //     else{
+  //       const convertedRevenue = convertToUSD(opportunity.revenue);
+  //       console.log('INR TO USD',convertedRevenue)
+  //       form.setValue(`opportunities.${index}.revenue`, convertedRevenue);
+  //       console.log(form.getValues(`opportunities.${index}.revenue`))
+  //     }
+  //   });
+  // }, [convertFromUSD, convertToUSD, form]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (obj === undefined) {
       const ifExistResult = await fetch("/api/unique-leads", {
@@ -194,7 +245,7 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
       }
     } else createLead(values);
   }
-  
+
   async function createLead(values: z.infer<typeof formSchema>) {
     try {
       setOpenAlert(false);
@@ -219,10 +270,10 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
       });
       form.reset();
       router.refresh();
-      
-      setTimeout(()=>{
+
+      setTimeout(() => {
         window.location.reload();
-      },2000)
+      }, 2000);
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -232,33 +283,37 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
     }
   }
   countryList().getLabels();
-  const width = "min-w-80";
-  const contactList = form.watch('contacts')
+  const width = "min-w-full sm:min-w-80 ";
+  const contactList = form.watch("contacts");
   return (
     <Card className="p-4">
       <CardHeader className="flex flex-col">
-        {obj===undefined?<CardTitle>Add new lead </CardTitle>:<CardTitle>Edit lead </CardTitle>}
+        <CardTitle>{obj ? "Edit lead" : "Add new lead"}</CardTitle>
         {/* <Separator /> */}
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex flex-1">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="flex flex-row gap-10">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-8 flex-1"
+          >
+            <div className="flex flex-row gap-10 flex-wrap">
               <FormField
                 control={form.control}
                 name="lead_owner"
                 render={({ field }) => (
                   <FormComboBox
                     field={field}
-                    list={lead_owners}
+                    list={users}
                     form={form}
                     form_value="lead_owner"
                     form_label="Lead Owner"
                     text="Select Lead Owner"
                     placeholder="Search lead owner..."
                     command_empty="No lead owners found."
-                    className="min-w-80"
+                    // className={width}
+                    className="w-full"
                   />
                 )}
               />
@@ -304,13 +359,17 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
                 <FormItem>
                   <FormLabel>Company Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Company Name" {...field} />
+                    <Input
+                      placeholder="Company Name"
+                      {...field}
+                      className={width}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="flex flex-row gap-10">
+            <div className="flex flex-row gap-10 flex-wrap">
               <FormField
                 control={form.control}
                 name="region"
@@ -361,11 +420,11 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
             </CardTitle>
             {contactFields.map((field, index) => (
               <div key={field.id} className="space-y-8">
-                <div className="flex flex-row gap-10">
+                <div className="flex flex-row gap-10 flex-wrap ">
                   <FormField
                     name={`contacts.${index}.first_name`}
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className={width}>
                         <FormLabel>Contact First Name</FormLabel>
                         <FormControl>
                           <Input
@@ -381,7 +440,7 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
                   <FormField
                     name={`contacts.${index}.last_name`}
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className={width}>
                         <FormLabel>Contact Last Name</FormLabel>
                         <FormControl>
                           <Input
@@ -397,7 +456,7 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
                   <FormField
                     name={`contacts.${index}.designation`}
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className={width}>
                         <FormLabel>Designation</FormLabel>
                         <FormControl>
                           <Input
@@ -413,11 +472,11 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
                 </div>
 
                 <div key={field.id} className="flex flex-row justify-between">
-                  <div className="flex flex-row gap-10">
+                  <div className="flex flex-row gap-10 flex-wrap">
                     <FormField
                       name={`contacts.${index}.email`}
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className={width}>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
                             <Input
@@ -433,10 +492,15 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
                     <FormField
                       name={`contacts.${index}.phone_number`}
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className={width}>
                           <FormLabel>Phone number</FormLabel>
                           <FormControl>
-                            <Input
+                            {/* <Input
+                              placeholder="Phone number"
+                              className={width}
+                              {...field}
+                            /> */}
+                            <PhoneInput
                               placeholder="Phone number"
                               className={width}
                               {...field}
@@ -481,18 +545,38 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Description" {...field} />
+                        <Textarea
+                          placeholder="Description"
+                          {...field}
+                          className={width}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <div className="flex flex-row justify-between">
-                  <div className="flex flex-row gap-10">
+                  <div className="flex flex-row gap-10 flex-wrap">
+                    <FormField
+                    name={`opportunities.${index}.currency`}
+                    render={({field})=>(
+                      <FormComboBox
+                      field={field}
+                      list={[{label:'USD',value:'USD'},{label:'INR',value:'INR'}]}
+                      form={form}
+                      form_value={`opportunities.${index}.currency`}
+                      form_label="Currency"
+                      text="Select Currency"
+                      placeholder="Search currency..."
+                      command_empty="No currency found."
+                      className={width}
+                    />
+                    )}
+                    />
                     <FormField
                       name={`opportunities.${index}.revenue`}
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className={width}>
                           <FormLabel>Revenue</FormLabel>
                           <FormControl>
                             <Input
@@ -510,19 +594,17 @@ export default function CreateLeadForm({ obj }: { obj?: any }) {
                       control={form.control}
                       name={`opportunities.${index}.contact_email`}
                       render={({ field }) => {
-                        console.log("field in form", field.value);
+                        // console.log("field in form", field.value);
                         return (
                           <FormComboBox
                             field={field}
                             multiSelect={true}
-                            list={
-                              contactList
+                            list={contactList
                               .filter((contact) => contact.email !== "")
                               .map((contact) => ({
                                 label: contact.email,
                                 value: contact.email,
-                              }))
-                            }
+                              }))}
                             form={form}
                             form_value={`opportunities.${index}.contact_email`}
                             form_label="Contact Email"

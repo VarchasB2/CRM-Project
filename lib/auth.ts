@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
         if (credentials?.password != existingUser?.pwd) {
           return null;
         }
+        console.log('exist',existingUser)
         return {
           
           id: existingUser.id + "",
@@ -46,6 +47,7 @@ export const authOptions: NextAuthOptions = {
           password: existingUser.pwd,
           userimage: existingUser.image,
           username: existingUser.name,
+          role:existingUser.role
         };
       },
     }),
@@ -57,6 +59,8 @@ export const authOptions: NextAuthOptions = {
           ...token,
           username: user.username,
           userimage: user.userimage,
+          role: user.role
+          
         };
       }
       return token;
@@ -68,6 +72,7 @@ export const authOptions: NextAuthOptions = {
           ...session.user,
           username: token.username,
           userimage: token.userimage,
+          role:token.role
         },
       };
     },

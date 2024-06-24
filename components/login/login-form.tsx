@@ -19,6 +19,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { toast, useToast } from "../ui/use-toast";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -29,7 +30,7 @@ const LoginForm = () => {
       password: "",
     },
   });
-
+  const { toast } = useToast();
   const onSubmit = async (data: z.infer<typeof LoginSchema>) => {
     const signInData = await signIn("credentials", {
       email: data.email,
@@ -37,7 +38,11 @@ const LoginForm = () => {
       redirect: false,
     });
     if (signInData?.error) {
-      console.log(signInData.error);
+      console.log('USE THE TOAST')
+      toast({
+        title:'Email or password is incorrect',
+        variant:'destructive'
+      })
     } else {
       router.push("/dashboard");
     }

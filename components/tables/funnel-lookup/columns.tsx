@@ -1,10 +1,18 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
 import { User } from "@prisma/client";
-import { closureDueDates, funnelProgress } from "@/lib/funnel-lookup/funnel-lookup-constants";
+import {
+  closureDueDates,
+  funnelProgress,
+} from "@/lib/funnel-lookup/funnel-lookup-constants";
 import { addDays } from "date-fns";
 import { Progress } from "@/components/ui/progress";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type funnelStages = {
   id: number;
@@ -12,11 +20,10 @@ export type funnelStages = {
   type_of_company: string;
   funnel_stage: string;
   company_name: string;
-  lead: {
-    lead_owner:User
-  }
+  lead_owner: {
+    name:string
+  };
 };
-
 
 export const columns: ColumnDef<funnelStages>[] = [
   {
@@ -27,10 +34,10 @@ export const columns: ColumnDef<funnelStages>[] = [
     },
   },
   {
-    id:'lead_owner',
+    id: "lead_owner",
     header: "Lead Owner",
-    accessorFn:(row)=>{
-      return row.lead.lead_owner.name
+    accessorFn: (row) => {
+      return row.lead_owner.name;
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
@@ -43,17 +50,18 @@ export const columns: ColumnDef<funnelStages>[] = [
     cell: ({ row }) => {
       const date = new Date(row.getValue("date"));
       const formatted = date.toLocaleDateString("en-In");
-      return formatted
+      return formatted;
     },
     filterFn: (row, id, value) => {
-      if(value.from === undefined && value.to!== undefined)
-        value.from = value.to
-      else
-      if(value.from !== undefined && value.to=== undefined)
-        value.to = value.from
-      const rowVal:Date = row.getValue(id)
-      const filterVal =value.from.setHours(0,0,0,0)<=rowVal.setHours(0,0,0,0)&& value.to.setHours(0,0,0,0)>=rowVal.setHours(0,0,0,0)
-      return (filterVal)
+      if (value.from === undefined && value.to !== undefined)
+        value.from = value.to;
+      else if (value.from !== undefined && value.to === undefined)
+        value.to = value.from;
+      const rowVal: Date = row.getValue(id);
+      const filterVal =
+        value.from.setHours(0, 0, 0, 0) <= rowVal.setHours(0, 0, 0, 0) &&
+        value.to.setHours(0, 0, 0, 0) >= rowVal.setHours(0, 0, 0, 0);
+      return filterVal;
     },
   },
   {
@@ -81,11 +89,22 @@ export const columns: ColumnDef<funnelStages>[] = [
     id: "progress",
     accessorKey: "funnel_stage",
     header: "Progress",
-    cell:({row})=>{
-        const name= row.getValue('funnel_stage') as keyof typeof funnelProgress
-        const progress = funnelProgress[name]
+    cell: ({ row }) => {
+      const name = row.getValue("funnel_stage") as keyof typeof funnelProgress;
+      const progress = funnelProgress[name];
 
-        return <Progress value={progress}/>
+      return (
+        <div className='testxl:pr-10'>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Progress value={progress} className="min-w-28"/>
+            </TooltipTrigger>
+            <TooltipContent>{progress}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        </div>
+      );
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
@@ -95,15 +114,18 @@ export const columns: ColumnDef<funnelStages>[] = [
     id: "closure_due_date",
     accessorKey: "type_of_company",
     header: "Closure Due Date",
-    cell:({row})=>{
-        const name= row.getValue('type_of_company') as keyof typeof closureDueDates
-        const closureDueDate = closureDueDates[name]
-        const date = new Date (row.getValue('date'))
-        const formatted = addDays(date , closureDueDate).toLocaleDateString("en-In")
-        // console.log(typeof date)
-        
-        
-        return formatted
+    cell: ({ row }) => {
+      const name = row.getValue(
+        "type_of_company"
+      ) as keyof typeof closureDueDates;
+      const closureDueDate = closureDueDates[name];
+      const date = new Date(row.getValue("date"));
+      const formatted = addDays(date, closureDueDate).toLocaleDateString(
+        "en-In"
+      );
+      // console.log(typeof date)
+
+      return formatted;
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
@@ -113,25 +135,28 @@ export const columns: ColumnDef<funnelStages>[] = [
     id: "days_overdue",
     accessorKey: "type_of_company",
     header: "Days overdue",
-    cell:({row})=>{
-        const name= row.getValue('type_of_company') as keyof typeof closureDueDates
-        const funnel_stage = row.getValue('funnel_stage')
-        if(funnel_stage === 'Won' || funnel_stage ==='Lost')
-          return 0
-        const closureDueDate = closureDueDates[name]
-        const date = new Date (row.getValue('date'))
-        const currentDate = new Date()
-        date.setHours(0,0,0,0)
-        currentDate.setHours(0,0,0,0)
-        const dueDate = Math.ceil((currentDate.getTime()-addDays(date , closureDueDate).getTime() )/(1000*3600*24))
-        // console.log((currentDate.getTime()-addDays(date , closureDueDate).getTime() )/(1000*3600*24))
-      
-        if(dueDate<0)
-            return <div className="text-green-500">{Math.abs(dueDate)}</div>
-        else
-        if(dueDate>0)
-            return <div className="text-destructive">{dueDate}</div>
-        return dueDate
+    cell: ({ row }) => {
+      const name = row.getValue(
+        "type_of_company"
+      ) as keyof typeof closureDueDates;
+      const funnel_stage = row.getValue("funnel_stage");
+      if (funnel_stage === "Won" || funnel_stage === "Lost") return 0;
+      const closureDueDate = closureDueDates[name];
+      const date = new Date(row.getValue("date"));
+      const currentDate = new Date();
+      date.setHours(0, 0, 0, 0);
+      currentDate.setHours(0, 0, 0, 0);
+      const dueDate = Math.ceil(
+        (currentDate.getTime() - addDays(date, closureDueDate).getTime()) /
+          (1000 * 3600 * 24)
+      );
+      // console.log((currentDate.getTime()-addDays(date , closureDueDate).getTime() )/(1000*3600*24))
+
+      if (dueDate < 0)
+        return <div className="text-green-500">{Math.abs(dueDate)}</div>;
+      else if (dueDate > 0)
+        return <div className="text-destructive">{dueDate}</div>;
+      return dueDate;
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));

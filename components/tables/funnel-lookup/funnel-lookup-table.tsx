@@ -52,13 +52,15 @@ import {
 import { DataTableFacetedFilter } from "../data-table-faceted-filter"; 
 import Link from "next/link";
 import { DatePickerWithRange } from "../date-picker-with-range";
-
+import Cookies from 'js-cookie'
 
 interface FunnelLookupTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   firstDate: Date;
   lastDate: Date;
+  colOrder?:string[]
+  colVis?:any
 }
 function getDropDownValues<T>(data: T[], selector: string) {
   const uniqueArray = [
@@ -66,7 +68,7 @@ function getDropDownValues<T>(data: T[], selector: string) {
       data.map((item: any) => {
         // console.log(item['lead'].lead_owner.name)
         return selector === "lead_owner"
-          ? item["lead"].lead_owner.name
+          ? item["lead_owner"].name
           : item[selector];
       })
     ),
@@ -96,16 +98,18 @@ export function FunnelLookupTable<TData, TValue>({
   data,
   firstDate,
   lastDate,
+  colOrder,
+  colVis
 }: FunnelLookupTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>((colVis===undefined?{}:colVis));
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [columnOrder, setColumnOrder] = React.useState<string[]>(
-    ['SI','lead_owner','date','type_of_company','funnel_stage','company_name','progress','closure_due_date','days_overdue']
+    colOrder == undefined ?['SI','lead_owner','date','type_of_company','funnel_stage','company_name','progress','closure_due_date','days_overdue']:colOrder
   );
   const [checked, setChecked] = React.useState(false);
   const table = useReactTable({
@@ -151,11 +155,19 @@ export function FunnelLookupTable<TData, TValue>({
 		}
 	}
   const currentColOrder = React.useRef<any>();
+  React.useEffect(()=>{
+    Cookies.set('funnel_col_order',JSON.stringify(columnOrder),{expires:3650})
+    // console.log('col order in effect', columnOrder)
+  },[columnOrder])
+  React.useEffect(()=>{
+    Cookies.set('funnel_col_vis',JSON.stringify(columnVisibility),{expires:3650})
+  },[columnVisibility])
   return (
     <Tabs defaultValue="all">
       <TabsContent value="all">
         <Card>
-          <CardHeader className="flex flex-row justify-between">
+          <CardHeader className="flex flex-col justify-between">
+            <div className="flex flex-col sm:flex-row justify-between">
             <div>
               <CardTitle>Funnel Lookup</CardTitle>
               <CardDescription className="py-2">
@@ -163,7 +175,7 @@ export function FunnelLookupTable<TData, TValue>({
               </CardDescription>
             </div>
 
-            <CardTitle className="flex flex-row">
+            <CardTitle className="hidden flex-row 2xl:flex">
               <div className="flex flex-row  justify-between gap-5 ">
                 <div>
                   {table.getColumn("lead_owner") && (
@@ -197,14 +209,14 @@ export function FunnelLookupTable<TData, TValue>({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8  p-2"
+                  className="h-8"
                   onClick={() => table.resetColumnFilters()}
                 >
                   Clear Filters
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="ml-auto h-8">
+                    <Button variant="outline" className="h-8">
                       Column Visibility
                     </Button>
                   </DropdownMenuTrigger>
@@ -230,7 +242,7 @@ export function FunnelLookupTable<TData, TValue>({
                 </DropdownMenu>
               </div>
             </CardTitle>
-            <CardTitle>
+            <CardTitle className='py-3 sm:py-0'>
               <div className="relative flex">
                 <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground top-2" />
                 <Input
@@ -243,6 +255,75 @@ export function FunnelLookupTable<TData, TValue>({
                 />
               </div>
             </CardTitle>
+            </div>
+            <CardTitle className="flex 2xl:hidden testxl:justify-center">
+              <div className="flex flex-row flex-wrap gap-5 ">
+                <div>
+                  {table.getColumn("lead_owner") && (
+                    <DataTableFacetedFilter
+                      column={table.getColumn("lead_owner")}
+                      title="Lead Owner"
+                      options={getDropDownValues(data, "lead_owner")}
+                    />
+                  )}
+                </div>
+                <DatePickerWithRange firstDate={firstDate} lastDate={lastDate} column={table.getColumn('date')}/>
+                <div className="flex flex-col">
+                  {table.getColumn("funnel_stage") && (
+                    <DataTableFacetedFilter
+                      column={table.getColumn("funnel_stage")}
+                      title="Funnel Stage"
+                      options={getDropDownValues(data, "funnel_stage")}
+                    />
+                  )}
+                </div>
+                <div>
+                  {table.getColumn("type_of_company") && (
+                    <DataTableFacetedFilter
+                      column={table.getColumn("type_of_company")}
+                      title="Type of Company"
+                      options={getDropDownValues(data, "type_of_company")}
+                    />
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => table.resetColumnFilters()}
+                >
+                  Clear Filters
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="h-8">
+                      Column Visibility
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {table
+                      .getAllColumns()
+                      .filter((column) => column.getCanHide())
+                      .map((column) => {
+                        return (
+                          <DropdownMenuCheckboxItem
+                            key={column.id}
+                            className="capitalize cursor-pointer"
+                            checked={column.getIsVisible()}
+                            onCheckedChange={(value) =>
+                              column.toggleVisibility(!!value)
+                            }
+                          >
+                            {column.id}
+                          </DropdownMenuCheckboxItem>
+                        );
+                      })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardTitle>
+            
           </CardHeader>
           <CardContent>
             <Table>

@@ -52,6 +52,7 @@ import {
 import { DataTableFacetedFilter } from "../data-table-faceted-filter";
 import Link from "next/link";
 import { DatePickerWithRange } from "../date-picker-with-range";
+import Cookies from 'js-cookie'
 
 interface CustomerLookupProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -60,29 +61,19 @@ interface CustomerLookupProps<TData, TValue> {
   facetedFilterCols?: string[];
   firstDate: Date;
   lastDate: Date;
+  colVis?:any
 }
 function getDropDownValues<T>(data: T[], selector: string) {
-  // const uniqueArray = [
-  //   ...new Set(
-  //     data.map((item: any) => {
-  //       // console.log(item)
-  //       return selector === "lead_owner_name"
-  //         ? item["lead"][0].lead_owner.name
-  //         : item[selector];
-  //     })
-  //   ),
-  // ];
   const uniqueArray = Array.from(
     new Set(
       data.flatMap((item:any) => {
         if (selector === 'lead_owner' && item.account.length > 0 && item.account[0].lead) {
           return item.account.map((acc:any) => acc.lead.lead_owner.name).filter((name:any) => name !== null);
         } else {
-          return [item[selector]]; // Return item[selector] directly if not 'lead_owner'
+          return [item[selector]]; 
         }
-      }).filter(val => val !== undefined && val !== null) // Filter out undefined and null values after flatMap
+      }).filter(val => val !== undefined && val !== null) 
   ));
-  // console.log('UNIQUE',uniqueArray)
   const noEmptyValues = uniqueArray.filter((element) => element !== "").sort();
   const optionsArray = noEmptyValues.map((listItem) => {
     return {
@@ -110,6 +101,7 @@ export function CustomerLookupTable<TData, TValue>({
   colOrder,
   firstDate,
   lastDate,
+  colVis
 }: CustomerLookupProps<TData, TValue>) {
   
   
@@ -119,7 +111,7 @@ export function CustomerLookupTable<TData, TValue>({
   );
   
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>((colVis===undefined?{}:colVis));
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [columnOrder, setColumnOrder] = React.useState<string[]>(
     colOrder == undefined ? columns.map((c) => c.id!) : colOrder
@@ -169,11 +161,19 @@ export function CustomerLookupTable<TData, TValue>({
 		}
 	}
   const currentColOrder = React.useRef<any>();
+  React.useEffect(()=>{
+    Cookies.set('customer_col_order',JSON.stringify(columnOrder),{expires:3650})
+    // console.log('col order in effect', columnOrder)
+  },[columnOrder])
+  React.useEffect(()=>{
+    Cookies.set('customer_col_vis',JSON.stringify(columnVisibility),{expires:3650})
+  },[columnVisibility])
   return (
     <Tabs defaultValue="all">
       <TabsContent value="all">
         <Card>
-          <CardHeader className="flex flex-row justify-between">
+          <CardHeader className="flex flex-col justify-between">
+            <div className="flex flex-row justify-between">
             <div>
               <CardTitle>Customer Lookup</CardTitle>
               <CardDescription className="py-2">
@@ -181,8 +181,8 @@ export function CustomerLookupTable<TData, TValue>({
               </CardDescription>
             </div>
 
-            <CardTitle className="flex flex-row">
-              <div className="flex flex-row  justify-between gap-5 ">
+            <CardTitle className="hidden flex-row justify-between gap-5 testxl:flex">
+              
                 <div>
                   {table.getColumn("lead_owner") && (
                     <DataTableFacetedFilter
@@ -227,7 +227,7 @@ export function CustomerLookupTable<TData, TValue>({
                       })}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
+              
             </CardTitle>
             <CardTitle>
               <div className="relative flex">
@@ -242,6 +242,53 @@ export function CustomerLookupTable<TData, TValue>({
                 />
               </div>
             </CardTitle>
+            </div>
+            <div className="flex flex-row gap-5 flex-wrap lg:justify-center testxl:hidden ">
+            <div>
+                  {table.getColumn("lead_owner") && (
+                    <DataTableFacetedFilter
+                      column={table.getColumn("lead_owner")}
+                      title="Lead Owner"
+                      options={getDropDownValues(data, "lead_owner")}
+                    />
+                  )}
+                </div>
+                <DatePickerWithRange firstDate={firstDate} lastDate={lastDate} column={table.getColumn('date')}/>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => table.resetColumnFilters()}
+                >
+                  Clear Filters
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="h-8">
+                      Column Visibility
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {table
+                      .getAllColumns()
+                      .filter((column) => column.getCanHide())
+                      .map((column) => {
+                        return (
+                          <DropdownMenuCheckboxItem
+                            key={column.id}
+                            className="capitalize cursor-pointer"
+                            checked={column.getIsVisible()}
+                            onCheckedChange={(value) =>
+                              column.toggleVisibility(!!value)
+                            }
+                          >
+                            {column.id}
+                          </DropdownMenuCheckboxItem>
+                        );
+                      })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>

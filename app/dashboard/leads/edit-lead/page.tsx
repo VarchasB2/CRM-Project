@@ -1,5 +1,7 @@
 import db from "@/app/modules/db";
 import CreateLeadForm from "@/components/tables/Leads/forms/create-lead";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import React from "react";
 
 const EditLead = async ({searchParams}:{searchParams:any}) => {
@@ -25,10 +27,23 @@ const EditLead = async ({searchParams}:{searchParams:any}) => {
       }
     }
   })
-  // console.log(obj?.account?.opportunities[0].contact)
+  console.log('OBJECT',obj)
+  const session = await getServerSession(authOptions)
+  const users = await db.user.findMany({
+    where: {
+      role: "user",
+    },
+    select: {
+      name: true,
+    },
+  });
+  const userNames = users.map((user) => ({
+    label: user.name,
+    value: user.name
+  }));
   return (
-    <div className="grid flex-1 items-center gap-4 p-4 sm:px-6 sm:py-20 md:gap-8  justify-center ">
-      <CreateLeadForm obj={obj}/>
+    <div className="testxl:grid flex-1 items-center gap-4 p-4 sm:px-6 sm:py-20 md:gap-8  justify-center ">
+      <CreateLeadForm obj={obj} currentUser={session?.user.username!} users={userNames} />
       
     </div>
   );

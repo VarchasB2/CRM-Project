@@ -53,27 +53,26 @@ import { DataTableFacetedFilter } from "../data-table-faceted-filter";
 import Link from "next/link";
 import { DatePickerWithRange } from "../date-picker-with-range";
 import { cn } from "../../../lib/utils";
+import Cookies from 'js-cookie'
 
 interface OpportunityDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  colOrder?: string[];
   facetedFilterCols?: string[];
   firstDate: Date;
   lastDate: Date;
+  colOrder?:string[]
+  colVis?:any
 }
 function getDropDownValues<T>(data: T[], selector: string) {
   const uniqueArray = [
     ...new Set(
       data.map((item: any) => {
-        if(selector === "lead_owner")
-          return item["account"].lead.lead_owner.name
-        else
-        if(selector==='type_of_company')
-        
-          return item['account'].type_of_company
-        return  item[selector];
-        
+        if (selector === "lead_owner")
+          return item["account"].lead.lead_owner.name;
+        else if (selector === "type_of_company")
+          return item["account"].type_of_company;
+        return item[selector];
       })
     ),
   ];
@@ -104,6 +103,8 @@ export function OpportunityDataTable<TData, TValue>({
   data,
   firstDate,
   lastDate,
+  colVis,
+  colOrder
 }: OpportunityDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -111,19 +112,20 @@ export function OpportunityDataTable<TData, TValue>({
   );
 
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>(colVis===undefined?{}:colVis);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [columnOrder, setColumnOrder] = React.useState<string[]>([
+  const [columnOrder, setColumnOrder] = React.useState<string[]>(
+    colOrder == undefined ?[
     "SI",
     "lead_owner",
     "date",
     "type_of_company",
     "company_name",
-    'contact_name',
-    'contact_email',
-    'contact_phone_number',
+    "contact_name",
+    "contact_email",
+    "contact_phone_number",
     "description",
-  ]);
+  ]:colOrder);
   const [checked, setChecked] = React.useState(false);
   const table = useReactTable({
     data,
@@ -168,21 +170,28 @@ export function OpportunityDataTable<TData, TValue>({
   }
   const currentColOrder = React.useRef<any>();
   // console.log(getDropDownValues(data, "type_of_company"))
-  console.log(columns[6])
+  // console.log(columns[6])
+  React.useEffect(()=>{
+    Cookies.set('opportunity_col_order',JSON.stringify(columnOrder),{expires:3650})
+    // console.log('col order in effect', columnOrder)
+  },[columnOrder])
+  React.useEffect(()=>{
+    Cookies.set('opportunity_col_vis',JSON.stringify(columnVisibility),{expires:3650})
+  },[columnVisibility])
   return (
     <Tabs defaultValue="all">
       <TabsContent value="all">
         <Card>
-          <CardHeader className="flex flex-row justify-between">
-            <div>
-              <CardTitle>Opportunity Lookup</CardTitle>
-              <CardDescription className="py-2">
-                Opportunity lookup data
-              </CardDescription>
-            </div>
+          <CardHeader className="flex flex-col justify-between">
+            <div className="flex flex-row justify-between">
+              <div>
+                <CardTitle>Opportunity Lookup</CardTitle>
+                <CardDescription className="py-2">
+                  Opportunity lookup data
+                </CardDescription>
+              </div>
 
-            <CardTitle className="flex flex-row">
-              <div className="flex flex-row  justify-between gap-5 ">
+              <CardTitle className="hidden flex-row justify-between gap-5 2xl:flex">
                 <div>
                   {table.getColumn("lead_owner") && (
                     <DataTableFacetedFilter
@@ -210,14 +219,14 @@ export function OpportunityDataTable<TData, TValue>({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8  p-2"
+                  className="h-8"
                   onClick={() => table.resetColumnFilters()}
                 >
                   Clear Filters
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="ml-auto h-8">
+                    <Button variant="outline" className="h-8">
                       Column Visibility
                     </Button>
                   </DropdownMenuTrigger>
@@ -241,21 +250,81 @@ export function OpportunityDataTable<TData, TValue>({
                       })}
                   </DropdownMenuContent>
                 </DropdownMenu>
+              </CardTitle>
+              <CardTitle>
+                <div className="relative flex">
+                  <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground top-2" />
+                  <Input
+                    placeholder="Search..."
+                    value={globalFilter ?? ""}
+                    onChange={(event) => {
+                      setGlobalFilter(event.target.value);
+                    }}
+                    className="pl-8 h-8"
+                  />
+                </div>
+              </CardTitle>
+            </div>
+            <div className="flex flex-row gap-5 flex-wrap testxl:justify-center 2xl:hidden ">
+              <div>
+                {table.getColumn("lead_owner") && (
+                  <DataTableFacetedFilter
+                    column={table.getColumn("lead_owner")}
+                    title="Lead Owner"
+                    options={getDropDownValues(data, "lead_owner")}
+                  />
+                )}
               </div>
-            </CardTitle>
-            <CardTitle>
-              <div className="relative flex">
-                <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground top-2" />
-                <Input
-                  placeholder="Search..."
-                  value={globalFilter ?? ""}
-                  onChange={(event) => {
-                    setGlobalFilter(event.target.value);
-                  }}
-                  className="pl-8 h-8"
-                />
+              <DatePickerWithRange
+                firstDate={firstDate}
+                lastDate={lastDate}
+                column={table.getColumn("date")}
+              />
+              <div>
+                {table.getColumn("type_of_company") && (
+                  <DataTableFacetedFilter
+                    column={table.getColumn("type_of_company")}
+                    title="Type of Company"
+                    options={getDropDownValues(data, "type_of_company")}
+                  />
+                )}
               </div>
-            </CardTitle>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => table.resetColumnFilters()}
+              >
+                Clear Filters
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-8">
+                    Column Visibility
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => {
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize cursor-pointer"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                          }
+                        >
+                          {column.id}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -329,7 +398,7 @@ export function OpportunityDataTable<TData, TValue>({
                           <TableCell
                             key={cell.id}
                             className={cn(
-                              `md:table-cell text-wrap`,
+                              `md:table-cell text-wrap`
                               // cell.column.columnDef.header === "Description"
                               //   ? "w-2/5"
                               //   : ""

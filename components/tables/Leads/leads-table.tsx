@@ -39,6 +39,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Cookies from 'js-cookie'
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { File, ListFilter, PlusCircle, Search } from "lucide-react";
 import {
@@ -60,6 +61,8 @@ interface LeadsTableProps<TData, TValue> {
   data: TData[];
   firstDate: Date;
   lastDate: Date;
+  colOrder?:string[]
+  colVis?:any
 }
 function getDropDownValues<T>(data: T[], selector: string) {
   const uniqueArray = [
@@ -97,16 +100,18 @@ export function LeadsTable<TData, TValue>({
   data,
   firstDate,
   lastDate,
+  colOrder,
+  colVis
 }: LeadsTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>(colVis===undefined?{}:colVis);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [columnOrder, setColumnOrder] = React.useState<string[]>(
-    columns.map((c) => c.id!)
+    colOrder===undefined?columns.map((c) => c.id!):colOrder
   );
   const [checked, setChecked] = React.useState(false);
   const table = useReactTable({
@@ -136,70 +141,43 @@ export function LeadsTable<TData, TValue>({
       const active = event.source.index;
       const over = event.destination.index;
 
-      console.log(active, over);
+      // console.log(active, over);
 
       if (active !== over && over !== null) {
         setColumnOrder((items) => {
+          console.log(items)
           const b = [...items];
           const c = b[active];
           b[active] = b[over];
           b[over] = c;
-          console.log(b);
+          // console.log(b);
+          
+          
           return b;
         });
       }
     }
+    
   }
   const currentColOrder = React.useRef<any>();
-
-  
+  React.useEffect(()=>{
+    Cookies.set('lead_col_order',JSON.stringify(columnOrder),{expires:3650})
+    console.log('col order in effect', columnOrder)
+  },[columnOrder])
+  React.useEffect(()=>{
+    Cookies.set('lead_col_vis',JSON.stringify(columnVisibility),{expires:3650})
+  },[columnVisibility])
   return (
-    <Tabs defaultValue="all">
-      <TabsContent value="all">
         <Card>
           <CardHeader className="flex flex-col justify-between">
-            <div className="flex flex-row justify-between">
+            <div className="flex flex-col sm:flex-row justify-between">
             <div>
               <CardTitle>Leads</CardTitle>
               <CardDescription className="py-2">
                 List of all leads
               </CardDescription>
             </div>
-            <CardTitle>
-              <div className="relative flex">
-                <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground top-2" />
-                <Input
-                  placeholder="Search..."
-                  value={globalFilter ?? ""}
-                  onChange={(event) => {
-                    setGlobalFilter(event.target.value);
-                  }}
-                  className="pl-8 h-8"
-                />
-                <div className="ml-auto flex gap-2 pl-2">
-                  <Link href={"/dashboard/leads/new-lead"}>
-                    <Button size="sm" className="h-8 gap-1">
-                      <PlusCircle className="h-3.5 w-3.5" />
-                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                        Add New Lead
-                      </span>
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardTitle>
-            </div>
-           
-
-            <CardTitle>
-              {/* <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="ml-auto h-8">
-                    Filters
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <div className="flex flex-col  justify-between gap-5 ">
+            <div className="flex-row  testxl:justify-between 2xl:justify-center gap-5 flex-wrap hidden 2xl:flex">
                     <div>
                       {table.getColumn("lead_owner_name") && (
                         <DataTableFacetedFilter
@@ -254,41 +232,70 @@ export function LeadsTable<TData, TValue>({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8  p-2"
+                      className="h-8"
                       onClick={() => table.resetColumnFilters()}
                     >
                       Clear Filters
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto h-8">
+                        <Button variant="outline" className=" h-8">
                           Column Visibility
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {table
-                          .getAllColumns()
-                          .filter((column) => column.getCanHide())
-                          .map((column) => {
-                            return (
-                              <DropdownMenuCheckboxItem
-                                key={column.id}
-                                className="capitalize cursor-pointer"
-                                checked={column.getIsVisible()}
-                                onSelect={(event) => event.preventDefault()}
-                                onCheckedChange={(value) =>
-                                  column.toggleVisibility(!!value)
-                                }
-                              >
-                                {column.id}
-                              </DropdownMenuCheckboxItem>
-                            );
-                          })}
+                          {
+                            columnOrder.map((colName:any)=>{
+                              const column = table.getColumn(colName)
+                              return(
+                                <DropdownMenuCheckboxItem
+                                  key={column!.id}
+                                  className="capitalize cursor-pointer"
+                                  checked={column!.getIsVisible()}
+                                  onSelect={(event) => event.preventDefault()}
+                                  onCheckedChange={(value) =>
+                                    { 
+                                      
+                                      return column!.toggleVisibility(!!value);
+                                    }
+                                    
+                                  }
+                                >
+                                  {column!.id}
+                                </DropdownMenuCheckboxItem>
+                              );
+                            })
+                          }
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                </DropdownMenuContent>
-              </DropdownMenu> */}
+            <CardTitle className='py-3 sm:py-0'>
+              <div className="relative flex">
+                <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground top-2" />
+                <Input
+                  placeholder="Search..."
+                  value={globalFilter ?? ""}
+                  onChange={(event) => {
+                    setGlobalFilter(event.target.value);
+                  }}
+                  className="pl-8 h-8"
+                />
+                <div className="ml-auto flex gap-2 pl-2">
+                  <Link href={"/dashboard/leads/new-lead"}>
+                    <Button size="sm" className="h-8 gap-1">
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        Add New Lead
+                      </span>
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardTitle>
+            </div>
+           
+
+            <CardTitle className="2xl:hidden">
               <div className="flex flex-row  testxl:justify-between 2xl:justify-center gap-5 flex-wrap">
                     <div>
                       {table.getColumn("lead_owner_name") && (
@@ -344,7 +351,7 @@ export function LeadsTable<TData, TValue>({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8  p-2"
+                      className="h-8"
                       onClick={() => table.resetColumnFilters()}
                     >
                       Clear Filters
@@ -356,24 +363,28 @@ export function LeadsTable<TData, TValue>({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {table
-                          .getAllColumns()
-                          .filter((column) => column.getCanHide())
-                          .map((column) => {
-                            return (
-                              <DropdownMenuCheckboxItem
-                                key={column.id}
-                                className="capitalize cursor-pointer"
-                                checked={column.getIsVisible()}
-                                onSelect={(event) => event.preventDefault()}
-                                onCheckedChange={(value) =>
-                                  column.toggleVisibility(!!value)
-                                }
-                              >
-                                {column.id}
-                              </DropdownMenuCheckboxItem>
-                            );
-                          })}
+                          {
+                            columnOrder.map((colName:any)=>{
+                              const column = table.getColumn(colName)
+                              return(
+                                <DropdownMenuCheckboxItem
+                                  key={column!.id}
+                                  className="capitalize cursor-pointer"
+                                  checked={column!.getIsVisible()}
+                                  onSelect={(event) => event.preventDefault()}
+                                  onCheckedChange={(value) =>
+                                    { 
+                                      
+                                      return column!.toggleVisibility(!!value);
+                                    }
+                                    
+                                  }
+                                >
+                                  {column!.id}
+                                </DropdownMenuCheckboxItem>
+                              );
+                            })
+                          }
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -386,6 +397,7 @@ export function LeadsTable<TData, TValue>({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <DragDropContext
                     onDragStart={() => {
+                      console.log('HEADER GROUP',headerGroup)
                       currentColOrder.current = table
                         .getAllFlatColumns()
                         .map((o) => o.id);
@@ -473,7 +485,5 @@ export function LeadsTable<TData, TValue>({
             <DataPagination table={table} />
           </CardContent>
         </Card>
-      </TabsContent>
-    </Tabs>
   );
 }

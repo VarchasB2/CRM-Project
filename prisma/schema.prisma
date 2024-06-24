@@ -37,22 +37,33 @@ model Leads {
   country         String
   contacts        AllContacts[]
   account         Account?
+  history         History[]
   lead_owner      User          @relation(fields: [owner_id], references: [id])
 }
 
 model AllContacts {
-  id           Int    @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   first_name   String
   last_name    String
   designation  String
-  email        String @unique
+  email        String  @unique
   phone_number String
-  lead         Leads  []
+  lead         Leads[]
+}
+
+model History {
+  id          Int      @id @default(autoincrement())
+  date        DateTime @default(now())
+  lead_id     Int
+  crud        String
+  lead_data    Json
+  account_data Json?
+  lead        Leads    @relation(fields: [lead_id], references: [id])
 }
 
 model Account {
   id              Int           @id @default(autoincrement())
-  lead_id         Int @unique
+  lead_id         Int           @unique
   date            DateTime
   type_of_company String
   funnel_stage    String

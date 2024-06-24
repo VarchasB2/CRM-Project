@@ -47,7 +47,7 @@ const DashboardNav = () => {
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
         <ModeToggle/>
           <TooltipProvider delayDuration={0}>
-            <ShortToolTip href={"/settings"}>Settings</ShortToolTip>
+            <ShortToolTip href={"/dashboard/settings"}>Settings</ShortToolTip>
           </TooltipProvider>
         </nav>
       </aside>

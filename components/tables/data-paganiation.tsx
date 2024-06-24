@@ -8,14 +8,15 @@ import { ColumnDef, Table } from "@tanstack/react-table"
 
 const DataPagination = ({table}:{table:Table<any>}) => {
   return (
-    <div className="flex items-center justify-between px-2">
+    <div className="flex items-center justify-between sm:px-2">
       <div className="flex-1 text-sm text-muted-foreground">
         {/* {table.getFilteredSelectedRowModel().rows.length} of{" "}
         {table.getFilteredRowModel().rows.length} row(s) selected. */}
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium hidden sm:flex">Rows per page</p>
+          <p className="text-sm font-medium flex sm:hidden">Rows</p>
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
@@ -34,9 +35,12 @@ const DataPagination = ({table}:{table:Table<any>}) => {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+        <div className="hidden sm:flex  w-[100px] items-center justify-center text-sm font-medium">
           Page {table.getState().pagination.pageIndex + 1} of{" "}
           {table.getPageCount()}
+        </div>
+        <div className="flex sm:hidden items-center justify-center text-sm font-medium text-nowrap">
+          {table.getState().pagination.pageIndex + 1} /{" "} {table.getPageCount()}
         </div>
         <div className="flex items-center space-x-2">
           <Button
