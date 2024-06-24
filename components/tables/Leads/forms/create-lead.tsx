@@ -26,7 +26,6 @@ import { Separator } from "@/components/ui/separator";
 import countryList from "react-select-country-list";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { getLeads } from "@/app/dashboard/leads/page";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@radix-ui/react-dialog";
 import {

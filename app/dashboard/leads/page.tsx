@@ -8,12 +8,47 @@ import { useSession } from "next-auth/react";
 import { cookies } from "next/headers";
 
 import React from "react";
-interface currencyFormatProps {
-  value: number;
-  currency: string;
-  decimal?: number;
-}
-export async function getLeads() {
+// interface currencyFormatProps {
+//   value: number;
+//   currency: string;
+//   decimal?: number;
+// }
+// export async function getLeads() {
+//   const data = await db.leads.findMany({
+//     relationLoadStrategy: "join",
+//     include: {
+//       lead_owner: true,
+//       contacts: true,
+//       account:{
+//         select:{
+//           opportunities:true
+//         }
+//       }
+//     },
+//     orderBy: {
+//       id: "asc",
+//     },
+//   });
+//   return data;
+// }
+// const currencyConversion = await fetch(
+//   "https://www.revolut.com/api/quote/public/USDINR"
+// ).then((res) => res.json());
+// // console.log(currency
+// function currencyFormat({ value, currency, decimal = 1 }: currencyFormatProps) {
+//   return new Intl.NumberFormat("en-In", {
+//     style: "currency",
+//     currency,
+//     maximumFractionDigits: decimal,
+//     minimumFractionDigits: decimal,
+//   }).format(value);
+// }
+// console.log(
+//   currencyFormat({ value: currencyConversion.rate * 1000, currency: "INR" })
+// );
+
+const LeadsPage = async () => {
+  // const data = await getLeads();
   const data = await db.leads.findMany({
     relationLoadStrategy: "join",
     include: {
@@ -29,26 +64,6 @@ export async function getLeads() {
       id: "asc",
     },
   });
-  return data;
-}
-const currencyConversion = await fetch(
-  "https://www.revolut.com/api/quote/public/USDINR"
-).then((res) => res.json());
-// console.log(currency
-function currencyFormat({ value, currency, decimal = 1 }: currencyFormatProps) {
-  return new Intl.NumberFormat("en-In", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: decimal,
-    minimumFractionDigits: decimal,
-  }).format(value);
-}
-console.log(
-  currencyFormat({ value: currencyConversion.rate * 1000, currency: "INR" })
-);
-
-const LeadsPage = async () => {
-  const data = await getLeads();
   const today: Date = new Date();
   // console.log('LEAD',data[data.length-1].account)
   // console.log(session)
