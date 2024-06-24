@@ -249,7 +249,7 @@ export default function CreateLeadForm({
     try {
       setOpenAlert(false);
       const method = obj === undefined ? "POST" : "PUT";
-      const response = await fetch("http://localhost:3000/api/lead-owners", {
+      const response = await fetch("/api/lead-owners", {
         method: method,
         headers: {
           Accept: "application/json",
