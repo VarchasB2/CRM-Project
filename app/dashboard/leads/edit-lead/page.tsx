@@ -11,7 +11,8 @@ const EditLead = async ({searchParams}:{searchParams:any}) => {
   console.log(id)
   const obj = await db.leads.findUnique({
     where:{
-      id: parseInt(id!)
+      id: parseInt(id!),
+      deletedAt:null
     },
     include:{
       lead_owner:true,
@@ -32,6 +33,7 @@ const EditLead = async ({searchParams}:{searchParams:any}) => {
   const users = await db.user.findMany({
     where: {
       role: "user",
+      deletedAt:null
     },
     select: {
       name: true,

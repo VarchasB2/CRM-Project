@@ -7,6 +7,9 @@ import React from "react";
 
 const FunnelLookup = async () => {
   const data = await db.leads.findMany({
+    where:{
+      deletedAt:null
+    },
     include: {
 
           lead_owner: {

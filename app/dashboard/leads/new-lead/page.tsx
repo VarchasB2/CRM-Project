@@ -9,6 +9,7 @@ const NewLead = async () => {
   const users = await db.user.findMany({
     where: {
       role: "user",
+      deletedAt:null
     },
     select: {
       name: true,

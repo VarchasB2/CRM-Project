@@ -6,6 +6,9 @@ import React from "react";
 
 const OpportunityLookup = async () => {
   const data = await db.opportunity.findMany({
+    where:{
+      deletedAt:null
+    },
     include:{
       account:{
         include:{

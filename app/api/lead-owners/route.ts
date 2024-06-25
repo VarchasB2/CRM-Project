@@ -16,6 +16,62 @@ export async function POST(req: Request) {
     const owner = await db.user.findUnique({
       where: { name: obj.lead_owner },
     });
+    // const updatedAllContacts = [];
+
+    // // Check and update deletedAt for each contact
+    // for (const contact of obj.contacts) {
+    //   let existingContact = await db.allContacts.findUnique({
+    //     where: {
+    //       email: contact.email,
+    //     },
+    //   });
+
+    //   if (existingContact && existingContact.deletedAt !== null) {
+    //     existingContact = await db.allContacts.update({
+    //       where: {
+    //         id: existingContact.id,
+    //       },
+    //       data: {
+    //         deletedAt: null,
+    //       },
+    //     });
+    //     updatedAllContacts.push(existingContact); // Track updated contacts
+    //   } else {
+    //     updatedAllContacts.push(existingContact || contact); // Track original or newly created contacts
+    //   }
+    // }
+    const updatedAllContacts = await Promise.all(obj.contacts.map(async (contact: AllContacts) => {
+      let existingContact = await db.allContacts.findUnique({
+        where: {
+          email: contact.email,
+        },
+      });
+
+      if (existingContact && existingContact.deletedAt !== null) {
+        existingContact = await db.allContacts.update({
+          where: {
+            id: existingContact.id,
+          },
+          data: {
+            deletedAt: null,
+            phone_number: contact.phone_number, // Update phone_number
+            designation: contact.designation, // Update designation
+          },
+        });
+        return existingContact; // Return updated contact
+      } else {
+        return db.allContacts.upsert({
+          where: { email: contact.email }, // Use email as unique identifier
+          create: {
+            ...contact, // Create the contact with all fields from the request
+          },
+          update: {
+            phone_number: contact.phone_number, // Update phone_number
+            designation: contact.designation, // Update designation
+          },
+        });
+      }
+    }));
     const lead = await db.leads.create({
       data: {
         owner_id: owner!.id,
@@ -26,7 +82,7 @@ export async function POST(req: Request) {
         country: countryList().getLabel(obj.country),
 
         contacts: {
-          connectOrCreate: obj.contacts.map((contact: AllContacts) => {
+          connectOrCreate: updatedAllContacts.map((contact: AllContacts) => {
             return {
               where: { email: contact.email },
               create: contact,
@@ -38,9 +94,66 @@ export async function POST(req: Request) {
         contacts: true,
       },
     });
-
+    // console.log('updated contacts',updatedContacts)
     let account;
     if (obj.opportunities.length > 0) {
+      // const updatedContacts = [];
+
+      // // Check and update deletedAt for each contact
+      // for (const contact of obj.contacts) {
+      //   let existingContact = await db.contact.findUnique({
+      //     where: {
+      //       email: contact.email,
+      //     },
+      //   });
+
+      //   if (existingContact && existingContact.deletedAt !== null) {
+      //     existingContact = await db.contact.update({
+      //       where: {
+      //         id: existingContact.id,
+      //       },
+      //       data: {
+      //         deletedAt: null,
+      //       },
+      //     });
+      //     updatedContacts.push(existingContact); // Track updated contacts
+      //   } else {
+      //     updatedContacts.push(existingContact || contact); // Track original or newly created contacts
+      //   }
+      // }
+      const updatedContacts = await Promise.all(obj.contacts.map(async (contact: Contact) => {
+        let existingContact = await db.contact.findUnique({
+          where: {
+            email: contact.email,
+          },
+        });
+
+        if (existingContact && existingContact.deletedAt !== null) {
+          existingContact = await db.contact.update({
+            where: {
+              id: existingContact.id,
+            },
+            data: {
+              deletedAt: null,
+              phone_number: contact.phone_number, // Update phone_number
+              designation: contact.designation, // Update designation
+            },
+          });
+          return existingContact; // Return updated contact
+        } else {
+          return db.contact.upsert({
+            where: { email: contact.email }, // Use email as unique identifier
+            create: {
+              ...contact, // Create the contact with all fields from the request
+            },
+            update: {
+              phone_number: contact.phone_number, // Update phone_number
+              designation: contact.designation, // Update designation
+            },
+          });
+        }
+      }));
+
       account = await db.account.create({
         data: {
           lead_id: lead.id,
@@ -51,7 +164,7 @@ export async function POST(req: Request) {
           region: lead.region,
           country: lead.country,
           contacts: {
-            connectOrCreate: obj.contacts.map((contact: Contact) => {
+            connectOrCreate: updatedContacts.map((contact: Contact) => {
               return {
                 where: { email: contact.email },
                 create: contact,
@@ -85,13 +198,13 @@ export async function POST(req: Request) {
         },
       });
     }
-    
+
     await db.history.create({
       data: {
         lead_id: lead.id,
         crud: "create",
-        lead_data:lead,
-        account_data: account ? account: undefined,
+        lead_data: lead,
+        account_data: account ? account : undefined,
       },
     });
 
@@ -106,12 +219,12 @@ export async function PUT(req: Request) {
     console.log("PUT");
 
     const obj = await req.json();
-    console.log(obj.original);
+    // console.log(obj.original);
     const leadId = obj.original.id;
     const updatedContacts = obj.contacts;
     const originalContacts = obj.original.contacts;
-    console.log("updatedContacts", updatedContacts);
-    console.log("originalContacts", originalContacts);
+    // console.log("updatedContacts", updatedContacts);
+    // console.log("originalContacts", originalContacts);
     const contactsToDisconnect = originalContacts
       .filter((originalContact: any) => {
         // Check if original contact email is not in updated contacts
@@ -125,8 +238,8 @@ export async function PUT(req: Request) {
     if (!leadId) {
       return Response.json({ error: "Invalid request. Missing lead_id." });
     }
-    console.log("contacts to disconnect", contactsToDisconnect);
-    let account_data = undefined
+    // console.log("contacts to disconnect", contactsToDisconnect);
+    let account_data = undefined;
     const updatedLead = await db.leads.update({
       where: { id: leadId },
       data: {
@@ -157,23 +270,20 @@ export async function PUT(req: Request) {
         contacts: true, // Include associated contacts in the response
       },
     });
-    await db.allContacts.deleteMany({
+    await db.allContacts.updateMany({
       where: {
         lead: {
           none: {},
         },
       },
+      data: {
+        deletedAt: new Date(),
+      },
     });
-    console.log("Updated Lead", updatedLead);
+    // console.log("Updated Lead", updatedLead);
     if (obj.opportunities.length === 0) {
       if (obj.original.account === null) {
       } else {
-        const test = await db.account.findFirst({
-          where: {
-            lead_id: updatedLead.id,
-          },
-        });
-        console.log("TEST", test);
         await db.opportunity.deleteMany({
           where: {
             account_id: obj.original.account.id,
@@ -186,7 +296,7 @@ export async function PUT(req: Request) {
         });
       }
     } else {
-      const account =await db.account.upsert({
+      const account = await db.account.upsert({
         where: { lead_id: leadId },
         create: {
           lead_id: updatedLead.id,
@@ -232,7 +342,7 @@ export async function PUT(req: Request) {
           // Update contacts in the account
           contacts: {
             connectOrCreate: obj.contacts.map((contact: any) => {
-              console.log("EMAIL ", contact.email);
+              // console.log("EMAIL ", contact.email);
               return {
                 where: { email: contact.email },
                 create: {
@@ -256,14 +366,14 @@ export async function PUT(req: Request) {
 
             // Create new opportunities from obj.opportunities
             create: obj.opportunities.map((newOpportunity: any) => {
-              console.log("NEW OPPORTUNITY", newOpportunity);
+              // console.log("NEW OPPORTUNITY", newOpportunity);
               return {
                 description: newOpportunity.description,
                 revenue: newOpportunity.revenue,
                 contact: {
                   connect: Array.isArray(newOpportunity.contact_email)
                     ? newOpportunity.contact_email.map((email: any) => {
-                        console.log("NEW OPP CONTACT", email);
+                        // console.log("NEW OPP CONTACT", email);
                         return { email: email };
                       })
                     : [],
@@ -271,29 +381,31 @@ export async function PUT(req: Request) {
               };
             }),
           },
-          
         },
 
         include: {
           contacts: true, // Include associated contacts in the response
         },
       });
-      account_data = account
+      account_data = account;
     }
 
-    await db.contact.deleteMany({
+    await db.contact.updateMany({
       where: {
         account: {
           none: {},
         },
+      },
+      data: {
+        deletedAt: new Date(),
       },
     });
     await db.history.create({
       data: {
         lead_id: updatedLead.id,
         crud: "update",
-        lead_data:updatedLead,
-        account_data: account_data ? account_data: undefined,
+        lead_data: updatedLead,
+        account_data: account_data ? account_data : undefined,
       },
     });
 
@@ -304,51 +416,91 @@ export async function PUT(req: Request) {
   }
 }
 
-export async function DELETE(req:Request) {
-  console.log()
-  try{
-    const leadID = await req.json()
+export async function DELETE(req: Request) {
+  console.log();
+  try {
+    const leadID = await req.json();
     await db.$transaction([
-      db.history.deleteMany({
-        where:{
-          lead_id:leadID
-        }
+      db.history.updateMany({
+        where: {
+          lead_id: leadID,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
       }),
-      db.opportunity.deleteMany({
-        where:{
-          account:{
-            lead_id:leadID
-          }
-        }
+      db.opportunity.updateMany({
+        where: {
+          account: {
+            lead_id: leadID,
+          },
+        },
+        data: {
+          deletedAt: new Date(),
+        },
       }),
-      db.account.deleteMany({
-        where:{
-          lead_id:leadID
-        }
+      db.account.updateMany({
+        where: {
+          lead_id: leadID,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
       }),
-      db.leads.delete({
-        where:{
-          id:leadID
-        }
-      })
-    ])
-    await db.allContacts.deleteMany({
-      where:{
-        lead:{
-          none:{}
-        }
-      }
-    })
-    await db.contact.deleteMany({
-      where:{
-        account:{
-          none:{}
-        }
-      }
-    })
-    return Response.json({sucess: true})
-  }catch(e){
-    console.log(e)
-    return Response.json({data:e})
+      db.leads.update({
+        where: {
+          id: leadID,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      }),
+    ]);
+    const allContactsToUpdate = await db.allContacts.findMany({
+      where: {
+        lead: {
+          every: {
+            deletedAt: { not: null }, // Check if every related lead is deleted
+          },
+        },
+      },
+    });
+
+    for (const contact of allContactsToUpdate) {
+      await db.allContacts.update({
+        where: {
+          id: contact.id,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+    }
+
+    // Soft delete Contacts if all related accounts are deleted
+    const contactsToUpdate = await db.contact.findMany({
+      where: {
+        account: {
+          every: {
+            deletedAt: { not: null }, // Check if every related account is deleted
+          },
+        },
+      },
+    });
+
+    for (const contact of contactsToUpdate) {
+      await db.contact.update({
+        where: {
+          id: contact.id,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+    }
+    return Response.json({ sucess: true });
+  } catch (e) {
+    console.log(e);
+    return Response.json({ data: e });
   }
 }

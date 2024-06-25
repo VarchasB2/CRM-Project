@@ -26,6 +26,7 @@ export const columns: ColumnDef<customer>[] = [
     id: "SI",
     header: "SI",
     cell: ({ row }) => {
+      console.log('Row',row.index,row)
       return row.index + 1;
     },
   },

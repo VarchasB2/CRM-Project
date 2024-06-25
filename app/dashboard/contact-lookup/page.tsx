@@ -7,8 +7,15 @@ import React from "react";
 const ContactLookup = async () => {
   const data = await db.allContacts.findMany({
     relationLoadStrategy: "join",
+    where:{
+      deletedAt:null
+    },
     include: {
+      
       lead: {
+        where:{
+          deletedAt:null
+        },
         include: {
           lead_owner: true,
         },
@@ -22,7 +29,7 @@ const ContactLookup = async () => {
 
   // console.log(data[0].lead[0].date.toLocaleDateString('en-In'))
   // console.log(data[data.length-1].lead[0].date.toLocaleDateString('en-In'))
-  console.log(data[data.length - 1]);
+  console.log('DATA',data);
   const colOrderCookie = cookies().get("contact_col_order");
   const colVisCookie = cookies().get("contact_col_vis");
   return (

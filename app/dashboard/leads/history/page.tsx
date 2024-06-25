@@ -10,6 +10,7 @@ const History = async ({ searchParams }: { searchParams: any }) => {
   const history = await db.history.findMany({
     where: {
       lead_id: Number(searchParams.id),
+      deletedAt:null
     },
     include: {
       lead: {

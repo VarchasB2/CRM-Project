@@ -7,8 +7,14 @@ import React from "react";
 const CustomerLookup = async () => {
   const data = await db.contact.findMany({
     relationLoadStrategy: "join",
+    where:{
+      deletedAt:null
+    },
     include: {
       account: {
+        where:{
+          deletedAt:null
+        },
         include: {
           lead: {
             select: {

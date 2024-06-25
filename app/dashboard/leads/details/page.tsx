@@ -8,6 +8,7 @@ const Details = async ({ searchParams }: { searchParams: any }) => {
   const lead = await db.leads.findUnique({
     where: {
       id: Number(searchParams.id),
+      deletedAt: null
     },
     include: {
       lead_owner: {

@@ -51,6 +51,9 @@ const LeadsPage = async () => {
   // const data = await getLeads();
   const data = await db.leads.findMany({
     relationLoadStrategy: "join",
+    where:{
+      deletedAt:null
+    },
     include: {
       lead_owner: true,
       contacts: true,
