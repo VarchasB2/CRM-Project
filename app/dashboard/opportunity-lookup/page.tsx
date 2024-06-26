@@ -25,7 +25,11 @@ const OpportunityLookup = async () => {
         },
 
       },
-      contact:true
+      contact:{
+        where:{
+          deletedAt:null
+        }
+      }
     },
     orderBy:{
       account:{
