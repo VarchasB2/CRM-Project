@@ -54,6 +54,8 @@ const FormComboBox = ({
     
   );
   // console.log('FORM VALUE',selectedValues)
+  if(form_label==='Currency')
+    console.log(field)
   const toggleSelectedValues = (item: any) => {
     // console.log('TYPEOF ITEM',typeof item)
 

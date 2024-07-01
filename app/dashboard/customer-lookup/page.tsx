@@ -32,6 +32,22 @@ const CustomerLookup = async () => {
       },
     },
   });
+  data.sort((a, b) => {
+    const earliestDateA = getEarliestAccountDate(a);
+    const earliestDateB = getEarliestAccountDate(b);
+    
+    if (earliestDateA < earliestDateB) return -1;
+    if (earliestDateA > earliestDateB) return 1;
+    return 0;
+  });
+  function getEarliestAccountDate(contact:any) {
+    // Extract dates from all accounts and find the earliest one
+    const accountDates = contact.account
+      .filter((account:any) => !account.deletedAt) // Filter out deleted accounts if needed
+      .map((account:any) => account.date);
+  
+    return new Date(Math.min(...accountDates));
+  }
   const today: Date = new Date();
   const colOrderCookie = cookies().get("customer_col_order");
   const colVisCookie = cookies().get("customer_col_vis");

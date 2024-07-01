@@ -40,38 +40,40 @@ export async function POST(req: Request) {
     //     updatedAllContacts.push(existingContact || contact); // Track original or newly created contacts
     //   }
     // }
-    const updatedAllContacts = await Promise.all(obj.contacts.map(async (contact: AllContacts) => {
-      let existingContact = await db.allContacts.findUnique({
-        where: {
-          email: contact.email,
-        },
-      });
-
-      if (existingContact && existingContact.deletedAt !== null) {
-        existingContact = await db.allContacts.update({
+    const updatedAllContacts = await Promise.all(
+      obj.contacts.map(async (contact: AllContacts) => {
+        let existingContact = await db.allContacts.findUnique({
           where: {
-            id: existingContact.id,
-          },
-          data: {
-            deletedAt: null,
-            phone_number: contact.phone_number, // Update phone_number
-            designation: contact.designation, // Update designation
+            email: contact.email,
           },
         });
-        return existingContact; // Return updated contact
-      } else {
-        return db.allContacts.upsert({
-          where: { email: contact.email }, // Use email as unique identifier
-          create: {
-            ...contact, // Create the contact with all fields from the request
-          },
-          update: {
-            phone_number: contact.phone_number, // Update phone_number
-            designation: contact.designation, // Update designation
-          },
-        });
-      }
-    }));
+
+        if (existingContact && existingContact.deletedAt !== null) {
+          existingContact = await db.allContacts.update({
+            where: {
+              id: existingContact.id,
+            },
+            data: {
+              deletedAt: null,
+              phone_number: contact.phone_number, // Update phone_number
+              designation: contact.designation, // Update designation
+            },
+          });
+          return existingContact; // Return updated contact
+        } else {
+          return db.allContacts.upsert({
+            where: { email: contact.email }, // Use email as unique identifier
+            create: {
+              ...contact, // Create the contact with all fields from the request
+            },
+            update: {
+              phone_number: contact.phone_number, // Update phone_number
+              designation: contact.designation, // Update designation
+            },
+          });
+        }
+      })
+    );
     const lead = await db.leads.create({
       data: {
         owner_id: owner!.id,
@@ -121,38 +123,40 @@ export async function POST(req: Request) {
       //     updatedContacts.push(existingContact || contact); // Track original or newly created contacts
       //   }
       // }
-      const updatedContacts = await Promise.all(obj.contacts.map(async (contact: Contact) => {
-        let existingContact = await db.contact.findUnique({
-          where: {
-            email: contact.email,
-          },
-        });
-
-        if (existingContact && existingContact.deletedAt !== null) {
-          existingContact = await db.contact.update({
+      const updatedContacts = await Promise.all(
+        obj.contacts.map(async (contact: Contact) => {
+          let existingContact = await db.contact.findUnique({
             where: {
-              id: existingContact.id,
-            },
-            data: {
-              deletedAt: null,
-              phone_number: contact.phone_number, // Update phone_number
-              designation: contact.designation, // Update designation
+              email: contact.email,
             },
           });
-          return existingContact; // Return updated contact
-        } else {
-          return db.contact.upsert({
-            where: { email: contact.email }, // Use email as unique identifier
-            create: {
-              ...contact, // Create the contact with all fields from the request
-            },
-            update: {
-              phone_number: contact.phone_number, // Update phone_number
-              designation: contact.designation, // Update designation
-            },
-          });
-        }
-      }));
+
+          if (existingContact && existingContact.deletedAt !== null) {
+            existingContact = await db.contact.update({
+              where: {
+                id: existingContact.id,
+              },
+              data: {
+                deletedAt: null,
+                phone_number: contact.phone_number, // Update phone_number
+                designation: contact.designation, // Update designation
+              },
+            });
+            return existingContact; // Return updated contact
+          } else {
+            return db.contact.upsert({
+              where: { email: contact.email }, // Use email as unique identifier
+              create: {
+                ...contact, // Create the contact with all fields from the request
+              },
+              update: {
+                phone_number: contact.phone_number, // Update phone_number
+                designation: contact.designation, // Update designation
+              },
+            });
+          }
+        })
+      );
 
       account = await db.account.create({
         data: {
@@ -174,7 +178,6 @@ export async function POST(req: Request) {
           opportunities: {
             create: obj.opportunities.map((opportunity: any) => {
               return {
-                description: opportunity.description,
                 revenue: opportunity.revenue,
                 contact: {
                   // connect:{
@@ -184,6 +187,12 @@ export async function POST(req: Request) {
                     // console.log('OBJECT E',e)
                     return { email: e };
                   }),
+                },
+                notes: {
+                  create: opportunity.notes.map((note: any) => ({
+                    description: note.description,
+                    date: note.date,
+                  })),
                 },
               };
             }),
@@ -219,7 +228,7 @@ export async function PUT(req: Request) {
     console.log("PUT");
 
     const obj = await req.json();
-    // console.log(obj.original);
+    console.log('IN PUT',obj);
     const leadId = obj.original.id;
     const updatedContacts = obj.contacts;
     const originalContacts = obj.original.contacts;
@@ -296,6 +305,13 @@ export async function PUT(req: Request) {
         });
       }
     } else {
+      await db.notes.deleteMany({
+        where:{
+          opportunity_id:{
+            in:obj.original.account.opportunities.map((opportunity:any)=>opportunity.id)
+          }
+        }
+      })
       const account = await db.account.upsert({
         where: { lead_id: leadId },
         create: {
@@ -317,7 +333,12 @@ export async function PUT(req: Request) {
           opportunities: {
             create: obj.opportunities.map((opportunity: any) => {
               return {
-                description: opportunity.description,
+                notes: {
+                  create: opportunity.notes.map((note: any) => ({
+                    description: note.description,
+                    date: note.date,
+                  })),
+                },
                 revenue: opportunity.revenue,
                 contact: {
                   // connect:{
@@ -363,12 +384,16 @@ export async function PUT(req: Request) {
           opportunities: {
             // Delete all existing opportunities linked to the account
             deleteMany: {},
-
             // Create new opportunities from obj.opportunities
             create: obj.opportunities.map((newOpportunity: any) => {
               // console.log("NEW OPPORTUNITY", newOpportunity);
               return {
-                description: newOpportunity.description,
+                notes: {
+                  create: newOpportunity.notes.map((note: any) => ({
+                    description: note.description,
+                    date: note.date,
+                  })),
+                },
                 revenue: newOpportunity.revenue,
                 contact: {
                   connect: Array.isArray(newOpportunity.contact_email)

@@ -76,7 +76,8 @@ const LeadsPage = async () => {
   const colOrderCookie = cookies().get("lead_col_order");
   // console.log(JSON.parse(colOrderCookie!.value))
   const colVisCookie = cookies().get("lead_col_vis");
-  // console.log(cookies().getAll())
+  console.log(cookies().getAll())
+
   return (
     <div className="flex-1 items-start gap-4 p-4 sm:px-6  md:gap-8">
       <LeadsTable

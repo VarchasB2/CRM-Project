@@ -22,13 +22,14 @@ const Details = async ({ searchParams }: { searchParams: any }) => {
           opportunities: {
             include: {
               contact: true,
+              notes:true
             },
           },
         },
       },
     },
   });
-  console.log(lead);
+  // console.log(lead); 
   return (
     <div className=" flex items-center gap-4 p-4 sm:py-20 md:gap-8  justify-center h-full ">
       <Card className="w-full h-full 2xl:w-1/2">
@@ -90,7 +91,7 @@ const Details = async ({ searchParams }: { searchParams: any }) => {
                   {lead.account.opportunities.map(opportunity=>{
                     return <div key={opportunity.id} className="pr-6 flex-wrap">
                       Contact email{`(s)`}: {opportunity.contact.map(c=>c.email).join(', ')}<br/>
-                      Description: {opportunity.description}<br/>
+                      Description: {opportunity.notes.map(note=>note.description)}<br/> {/*fix later*/}
                       Revenue: {opportunity.revenue.toString()}<br/>
                     </div>
                   })}

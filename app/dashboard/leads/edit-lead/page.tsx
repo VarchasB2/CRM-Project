@@ -21,7 +21,8 @@ const EditLead = async ({searchParams}:{searchParams:any}) => {
         include:{
           opportunities:{
             include:{
-              contact:true
+              contact:true,
+              notes:true
             }
           }
         }

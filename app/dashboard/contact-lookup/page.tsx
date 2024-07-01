@@ -17,7 +17,11 @@ const ContactLookup = async () => {
           deletedAt:null
         },
         include: {
-          lead_owner: true,
+          lead_owner: {
+            select:{
+              name:true
+            }
+          },
         },
         orderBy: {
           date: "asc",

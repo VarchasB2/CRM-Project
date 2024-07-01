@@ -1,10 +1,12 @@
-import React from 'react'
-import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import AccountDropDown from '@/components/dashboard/account-dropdown';
-import NavSheet from '@/components/dashboard/nav-sheet';
-import DashboardNav from '@/components/dashboard/dashboard-nav';
-import BreadCrumb from '@/components/dashboard/breadcrumb';
+import React from "react";
+import { Bell, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import AccountDropDown from "@/components/dashboard/account-dropdown";
+import NavSheet from "@/components/dashboard/nav-sheet";
+import DashboardNav from "@/components/dashboard/dashboard-nav";
+import BreadCrumb from "@/components/dashboard/breadcrumb";
+import Notifications from "@/components/dashboard/notifcations";
+import CurrencyDropdown from "@/components/dashboard/currency-dropdown";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -22,15 +24,16 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
             />
           </div> */}
-          <div className="relative ml-auto md:grow-0">
-
-          <AccountDropDown/>
+          <div className="relative flex flex-row items-center ml-auto md:grow-0 gap-5">
+            <CurrencyDropdown/>
+            <Notifications/>
+            <AccountDropDown />
           </div>
         </header>
         {children}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default DashboardLayout
+export default DashboardLayout;

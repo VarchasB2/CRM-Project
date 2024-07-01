@@ -5,6 +5,7 @@ import { closureDueDates, funnelProgress } from "@/lib/funnel-lookup/funnel-look
 import { addDays } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import ContactRow from "../all-contacts/contact-row";
+import NotesRow from "./notes-row";
 
 
 export type opportunity = {
@@ -13,7 +14,10 @@ export type opportunity = {
   // date: Date;
   // type_of_company: string;
   // company_name: string;
-  description:string
+  notes:{
+    description: string,
+    date: Date
+  }[]
   account:{
     date:Date,
     type_of_company:string,
@@ -37,6 +41,7 @@ export const columns: ColumnDef<opportunity>[] = [
     id: "SI",
     header: "SI",
     cell: ({ row }) => {
+      console.log(row.original)
       return row.index + 1;
     },
   },
@@ -95,9 +100,25 @@ export const columns: ColumnDef<opportunity>[] = [
     },
   },
   {
-    accessorKey: "description",
+    id: "description",
     header: "Description",
-    
+    cell:({ row }) => {
+      return(<NotesRow notes={row.original.notes} field={'description'}/>)
+      
+    },
+    filterFn: (row, id, value) => {
+      console.log(value.includes(row.getValue(id)))
+
+      return value.includes(row.getValue(id));
+    },
+  },
+  {
+    id: "dueDate",
+    header: "Due date",
+    cell:({ row }) => {
+      return(<NotesRow notes={row.original.notes} field={'date'}/>)
+      
+    },
     filterFn: (row, id, value) => {
       console.log(value.includes(row.getValue(id)))
 

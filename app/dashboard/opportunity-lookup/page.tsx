@@ -10,9 +10,9 @@ const OpportunityLookup = async () => {
       deletedAt:null
     },
     include:{
+      notes:true,
       account:{
         include:{
-          
           lead:{
             select:{
               lead_owner:{
