@@ -19,7 +19,6 @@ const NewLead = async () => {
     label: user.name,
     value: user.name
   }));
-  // console.log('USER NAMES IN PAGE',userNames)
   return (
     <div className="testxl:grid flex-1 items-center gap-4 p-4 sm:py-20 md:gap-8  justify-center ">
       <CreateLeadForm users={userNames} currentUser={session?.user.username!} />

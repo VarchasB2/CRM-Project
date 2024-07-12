@@ -22,7 +22,7 @@ export type revenue = {
     date: Date;
     company_name: string;
   };
-  revenue: BigInt;
+  revenue: number;
 };
 
 export const columns: ColumnDef<revenue>[] = [

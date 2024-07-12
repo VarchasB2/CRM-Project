@@ -20,6 +20,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { toast, useToast } from "../ui/use-toast";
+import { PasswordInput } from "../ui/password-input";
+import React from "react";
+import { Loader2 } from "lucide-react";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -31,24 +34,33 @@ const LoginForm = () => {
     },
   });
   const { toast } = useToast();
+  const [isLoading, setLoading] = React.useState(false)
   const onSubmit = async (data: z.infer<typeof LoginSchema>) => {
+    setLoading(true)
     const signInData = await signIn("credentials", {
       email: data.email,
       password: data.password,
       redirect: false,
     });
+    setLoading(false)
     if (signInData?.error) {
-      console.log('USE THE TOAST')
+      console.log(typeof signInData.error);
+      signInData.error === "blocked"?
+        toast({
+          title: "User is blocked",
+          variant: "destructive",
+        })
+        :
       toast({
-        title:'Email or password is incorrect',
-        variant:'destructive'
-      })
+        title: "Email or password is incorrect",
+        variant: "destructive",
+      });
     } else {
       router.push("/dashboard");
     }
   };
 
-  const { pending } = useFormStatus();
+  
   return (
     <div className="w-full lg:grid  lg:grid-cols-2  h-screen">
       <div className="flex items-center justify-center py-12">
@@ -97,7 +109,7 @@ const LoginForm = () => {
                           </Link>
                         </div>
                         <FormControl>
-                          <Input
+                          <PasswordInput
                             {...field}
                             type="password"
                             placeholder="******"
@@ -108,8 +120,8 @@ const LoginForm = () => {
                     )}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={pending}>
-                  Login
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading?<Loader2/>:'Login'}
                 </Button>
               </div>
             </form>

@@ -36,8 +36,8 @@ export function DataTableFacetedFilter<TData, TValue>({
   options,
   isArray = false,
 }: DataTableFacetedFilter<TData, TValue>) {
-  // console.log("column", column);
-  // console.log('facets',column?.getFacetedUniqueValues())
+  console.log("column", column);
+  console.log('facets',column?.getFacetedUniqueValues())
 
   let facets = column?.getFacetedUniqueValues();
   // console.log(facets);

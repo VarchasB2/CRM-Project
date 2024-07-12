@@ -31,9 +31,6 @@ const ContactLookup = async () => {
   });
   const today: Date = new Date();
 
-  // console.log(data[0].lead[0].date.toLocaleDateString('en-In'))
-  // console.log(data[data.length-1].lead[0].date.toLocaleDateString('en-In'))
-  console.log('DATA',data);
   const colOrderCookie = cookies().get("contact_col_order");
   const colVisCookie = cookies().get("contact_col_vis");
   return (

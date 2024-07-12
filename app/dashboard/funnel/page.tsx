@@ -28,7 +28,6 @@ const FunnelLookup = async () => {
   const colVisCookie = cookies().get("funnel_col_vis");
   return (
     <div className="flex-1 items-start gap-4 p-4 sm:px-6  md:gap-8 ">
-      {/* <DataTable columns={columns} data={data} colOrder={['SI','lead_owner','date','type_of_company','funnel_stage','company_name','progress','closure_due_date','days_overdue']}/> */}
       <FunnelLookupTable
         columns={columns}
         data={data}

@@ -34,6 +34,7 @@ interface FormComboBoxProps {
   command_empty: string;
   className: string;
   multiSelect?: boolean;
+  formItemClassName?:string
 }
 
 const FormComboBox = ({
@@ -47,6 +48,7 @@ const FormComboBox = ({
   command_empty,
   className,
   multiSelect = false,
+  formItemClassName
 }: FormComboBoxProps) => {
   const [open, setOpen] = useState(false);
   const [selectedValues, setSelectedValues] = useState<string[]>(
@@ -98,7 +100,7 @@ const FormComboBox = ({
       })?.label || text;
 
   return (
-    <FormItem className="flex flex-col mt-auto gap-1 min-w-full sm:min-w-80">
+    <FormItem className={cn(`flex flex-col mt-auto gap-1`,formItemClassName?formItemClassName:"min-w-full sm:min-w-80")}>
       <FormLabel>{form_label}</FormLabel>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>

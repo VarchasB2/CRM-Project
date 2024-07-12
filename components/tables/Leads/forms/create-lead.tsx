@@ -19,7 +19,7 @@ import {
   regions,
   type_of_companies,
 } from "@/lib/form/form-constants";
-import { Check, ChevronsUpDown, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, LoaderIcon, Plus, Trash2 } from "lucide-react";
 import FormComboBox from "./form-combo-box";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -67,6 +67,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { useSession } from "next-auth/react";
 
 export const formSchema = z.object({
   lead_owner: z.string().min(1, {
@@ -171,6 +172,8 @@ export default function CreateLeadForm({
 }) {
   const { toast } = useToast();
   const { convertToUSD, convertFromUSD, currency, setCurrency } = useCurrency();
+  const {data: session} = useSession()
+  const [isLoading, setLoading] = React.useState(false)
   if (
     obj !== undefined &&
     obj.account !== null &&
@@ -299,6 +302,7 @@ export default function CreateLeadForm({
   }
 
   async function createLead(values: z.infer<typeof formSchema>) {
+    setLoading(true)
     try {
       setOpenAlert(false);
       const method = obj === undefined ? "POST" : "PUT";
@@ -310,8 +314,8 @@ export default function CreateLeadForm({
         },
         body:
           obj === undefined
-            ? JSON.stringify(values)
-            : JSON.stringify({ ...values, original: obj }),
+            ? JSON.stringify({...values, user: session?.user.username})
+            : JSON.stringify({ ...values, original: obj ,user:session?.user.username}),
       });
       if (!response.ok) {
         throw new Error(`Failed to ${obj ? "update" : "create"} lead.`);
@@ -332,13 +336,15 @@ export default function CreateLeadForm({
         title: `Failed to ${obj ? "update" : "create"} lead.`,
         variant: "destructive",
       });
+    } finally{
+      setLoading(false)
     }
   }
   countryList().getLabels();
   const width = "min-w-full sm:min-w-80 ";
   const contactList = form.watch("contacts");
   // console.log("form",form.getValues('opportunities'))
-  if (obj) console.log("OBJECT", obj);
+  // if (obj) console.log("OBJECT", obj);
   return (
     <Card className="p-4">
       <CardHeader className="flex flex-col">
@@ -575,7 +581,7 @@ export default function CreateLeadForm({
                       className="gap-1"
                       onClick={() => contactRemove(index)}
                     >
-                      Delete Conatct
+                      Delete Contact
                       <Trash2 />
                     </Button>
                   )}
@@ -722,6 +728,7 @@ export default function CreateLeadForm({
                     variant="ghost"
                     className="gap-1"
                     onClick={() => opportunityRemove(index)}
+                    disabled={isLoading}
                   >
                     Delete opportunity
                     <Trash2 />
@@ -734,7 +741,7 @@ export default function CreateLeadForm({
 
             <div className="flex flex-row justify-center">
               <Button type="submit" className="px-6">
-                Submit
+                {isLoading? <Loader2/>:'Submit'}
               </Button>
             </div>
             <AlertDialog open={isOpenAlert}>

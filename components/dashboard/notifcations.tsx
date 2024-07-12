@@ -20,14 +20,12 @@ const Notifications = () => {
   let tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
-  // console.log(Cookies.get());
+
 
   React.useEffect(() => {
-    // console.log("fetched notfications");
     fetchNotifications();
   }, []);
   React.useEffect(() => {
-    // Load clickedIds from cookies when component mounts
     const savedClickedIds =
       Cookies.get("clickedIds") === undefined
         ? undefined
@@ -37,34 +35,28 @@ const Notifications = () => {
     }
   }, []);
   React.useEffect(() => {
-    // Save clickedIds to cookies whenever it changes
     if (clickedIds.length > 0)
       Cookies.set("clickedIds", JSON.stringify(clickedIds));
   }, [clickedIds]);
 
-  // React.useEffect(()=>{
-  //   console.log(clickedIds)
-  //   // Cookies.set('clickedIds',JSON.stringify(clickedIds))
-  // },[clickedIds])
   const fetchNotifications = async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    // console.log("Cookies", Cookies.get());
     try {
       const result = await fetch("/api/notes", { method: "GET" });
-      // console.log('Result',result)
+
       const jsonResult = await result.json();
-      // console.log('jsonResult',jsonResult)
+
       setNotifications(jsonResult);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
   };
   const markAsRead = (id: number) => {
-    // Add the clicked notification id to the clickedIds state
+
     if (!clickedIds.includes(id))
       setClickedIds((prevClickedIds: any) => [...prevClickedIds, id]);
   };
@@ -74,12 +66,14 @@ const Notifications = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost">
             <Bell />
-            <Badge
+            {notifications.map((note:any)=>(!clickedIds.includes(note.id) && ( <Badge
+              key={note.id}
               variant="destructive"
               className="absolute top-0 right-0 transform translate-x-1/3 -translate-y-1/3 "
             >
-              {notifications.length - clickedIds.length}
-            </Badge>
+              !
+            </Badge>)))
+             }
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -98,11 +92,6 @@ const Notifications = () => {
                 }`}
                 onClick={() => markAsRead(note.id)}
               >
-                {/* <Link
-                href={`/dashboard/leads/details?id=${note.opportunity.account.lead_id}`}
-              >
-                {note.opportunity.account.company_name} : Note due today
-              </Link> */}
                 {note.opportunity.account.company_name} : Note due today
               </div>
             </Link>

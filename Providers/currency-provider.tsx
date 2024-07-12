@@ -11,12 +11,26 @@ export const CurrencyContext = React.createContext<
   CurrencyContextType | undefined
 >(undefined);
 
+const fetchCurrency = async ()=>{
+  const currentRate = await (await fetch('/api/currency',{method:'GET'})).json()
+  console.log('FETCH RATE',currentRate)
+  return currentRate.rate
+}
+
 export const CurrencyProvider = ({ children }: any) => {
   const initialCurrency = Cookies.get("currency") || "USD"
   const [currency, setCurrency] = React.useState("USD");
+  const [currentRate, setCurrentRate] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const rate = await fetchCurrency();
+      setCurrentRate(rate);
+    };
+    fetchData();
+  }, []); 
   const exchangeRates: Record<string, number> = {
     USD: 1,
-    INR: 83.45,
+    INR: currentRate? currentRate:83.45,
   };
   //   const convertCurrency = (amount: number, targetCurrency: string): number => {
   //     if (currency === targetCurrency) {

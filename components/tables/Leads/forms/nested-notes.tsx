@@ -69,7 +69,7 @@ const NestedNotes = ({ oppIndex, form }: { oppIndex: any; form: any }) => {
                 // console.log('field',field)
                 return (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>Due Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
