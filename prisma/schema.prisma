@@ -12,17 +12,19 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  name  String  @unique
-  email String  @unique
-  pwd   String
-  image String
-  role  String
-  leads Leads[]
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  email     String    @unique
+  pwd       String
+  image     String
+  role      String
+  status    String    @default("active")
+  leads     Leads[]
+  deletedAt DateTime?
 
   @@map("users")
 }
@@ -40,26 +42,29 @@ model Leads {
   account         Account?
   history         History[]
   lead_owner      User          @relation(fields: [owner_id], references: [id])
+  deletedAt       DateTime?
 }
 
 model AllContacts {
-  id           Int     @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   first_name   String
   last_name    String
   designation  String
-  email        String  @unique
+  email        String    @unique
   phone_number String
   lead         Leads[]
+  deletedAt    DateTime?
 }
 
 model History {
-  id          Int      @id @default(autoincrement())
-  date        DateTime @default(now())
-  lead_id     Int
-  crud        String
-  lead_data    Json
-  account_data Json?
-  lead        Leads    @relation(fields: [lead_id], references: [id])
+  id           Int       @id @default(autoincrement())
+  date         DateTime  @default(now())
+  lead_id      Int
+  crud         String
+  changes      String
+  user         String
+  lead         Leads     @relation(fields: [lead_id], references: [id])
+  deletedAt    DateTime?
 }
 
 model Account {
@@ -74,6 +79,7 @@ model Account {
   contacts        Contact[]
   opportunities   Opportunity[]
   lead            Leads         @relation(fields: [lead_id], references: [id])
+  deletedAt       DateTime?
 }
 
 model Contact {
@@ -85,13 +91,28 @@ model Contact {
   phone_number String
   opportunity  Opportunity[]
   account      Account[]
+  deletedAt    DateTime?
 }
 
 model Opportunity {
-  id          Int       @id @default(autoincrement())
-  description String
-  revenue     BigInt
-  account_id  Int
-  contact     Contact[]
-  account     Account   @relation(fields: [account_id], references: [id])
+  id         Int       @id @default(autoincrement())
+  notes      Notes[]
+  revenue    Decimal
+  account_id Int
+  contact    Contact[]
+  account    Account   @relation(fields: [account_id], references: [id])
+  deletedAt  DateTime?
+}
+
+model Notes {
+  id             Int         @id @default(autoincrement())
+  description    String
+  date           DateTime
+  opportunity_id Int
+  opportunity    Opportunity @relation(fields: [opportunity_id], references: [id])
+}
+
+model Currency {
+  id   Int     @id @default(autoincrement())
+  rate Decimal
 }

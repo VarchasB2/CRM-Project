@@ -19,7 +19,7 @@ import {
   regions,
   type_of_companies,
 } from "@/lib/form/form-constants";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, LoaderIcon, Plus, Trash2 } from "lucide-react";
 import FormComboBox from "./form-combo-box";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -45,6 +45,29 @@ import { isValidPhoneNumber } from "react-phone-number-input";
 import { PhoneInput } from "./phone-number-input";
 import { User } from "@prisma/client";
 import { useCurrency } from "@/Providers/currency-provider";
+import NestedNotes from "./nested-notes";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { useSession } from "next-auth/react";
 
 export const formSchema = z.object({
   lead_owner: z.string().min(1, {
@@ -92,9 +115,14 @@ export const formSchema = z.object({
   ),
   opportunities: z.array(
     z.object({
-      description: z.string({}).min(1, {
-        message: "Required",
-      }),
+      notes: z.array(
+        z.object({
+          description: z.string().min(1, {
+            message: "Required",
+          }),
+          date: z.date(),
+        })
+      ),
       revenue: z.coerce
         .number({ message: "Enter numerical values only" })
         .min(1, {
@@ -103,6 +131,7 @@ export const formSchema = z.object({
       currency: z.string().min(1, {
         message: "Required",
       }),
+      previousCurrency: z.string(),
       contact_email: z.array(
         z
           .string({})
@@ -114,7 +143,6 @@ export const formSchema = z.object({
     })
   ),
 });
-
 const emptyContact: any = {
   first_name: "",
   last_name: "",
@@ -122,8 +150,12 @@ const emptyContact: any = {
   email: "",
   phone_number: "",
 };
-const emptyOpportunity: any = {
+export const emptyNote: any = {
   description: "",
+  date: new Date(),
+};
+const emptyOpportunity: any = {
+  notes: [emptyNote],
   revenue: "",
   currency: "USD",
   contact_email: "",
@@ -139,7 +171,9 @@ export default function CreateLeadForm({
   currentUser: string;
 }) {
   const { toast } = useToast();
-  const {convertToUSD,convertFromUSD} = useCurrency()
+  const { convertToUSD, convertFromUSD, currency, setCurrency } = useCurrency();
+  const {data: session} = useSession()
+  const [isLoading, setLoading] = React.useState(false)
   if (
     obj !== undefined &&
     obj.account !== null &&
@@ -176,9 +210,16 @@ export default function CreateLeadForm({
           ? []
           : obj.account.opportunities.map((opportunity: any) => {
               return {
-                description: opportunity.description,
-                revenue: convertFromUSD(opportunity.revenue),
-                currency: opportunity.currency==='INR'?'INR':'USD',
+                // description: opportunity.description,
+                notes:
+                  opportunity.notes.length === 0
+                    ? [emptyNote]
+                    : opportunity.notes,
+                revenue:
+                  currency === "USD"
+                    ? opportunity.revenue
+                    : convertFromUSD(opportunity.revenue),
+                currency: currency,
                 contact_email: opportunity.contact.map(
                   (contact: any) => contact.email
                 ),
@@ -204,28 +245,42 @@ export default function CreateLeadForm({
     name: "opportunities",
   });
   const router = useRouter();
-
+  
   const [isOpenAlert, setOpenAlert] = React.useState(false);
-
-  // React.useEffect(() => {
-  //   const currencyValues = form.watch('opportunities');
-  //   currencyValues.forEach((opportunity:any, index:any) => {
-  //     if (opportunity.currency === 'INR') {
-  //       const convertedRevenue = convertFromUSD(opportunity.revenue);
-  //       console.log('USD TO INR',convertedRevenue)
-  //       form.setValue(`opportunities.${index}.revenue`, convertedRevenue);
-  //       console.log(form.getValues(`opportunities.${index}.revenue`))
-  //     }
-  //     else{
-  //       const convertedRevenue = convertToUSD(opportunity.revenue);
-  //       console.log('INR TO USD',convertedRevenue)
-  //       form.setValue(`opportunities.${index}.revenue`, convertedRevenue);
-  //       console.log(form.getValues(`opportunities.${index}.revenue`))
-  //     }
-  //   });
-  // }, [convertFromUSD, convertToUSD, form]);
+  React.useLayoutEffect(() => {
+    opportunityFields.forEach((field, index) => {
+      const currentCurrency = currency;
+      const currentRevenue = form.getValues(`opportunities.${index}.revenue`);
+      const previousCurrency = form.getValues(`opportunities.${index}.previousCurrency`);
+      // Check if currency has changed
+      if (previousCurrency !== currentCurrency) {
+        if (previousCurrency === "INR" && currentCurrency === "USD") {
+          console.log("INR TO USD");
+          const convertedRevenue = convertToUSD(currentRevenue);
+          form.setValue(`opportunities.${index}.revenue`, convertedRevenue);
+        }
+        if (previousCurrency === "USD" && currentCurrency === "INR") {
+          console.log("USD TO INR");
+          const convertedRevenue = convertFromUSD(currentRevenue);
+          form.setValue(`opportunities.${index}.revenue`, convertedRevenue);
+        }
+  
+        // Update previousCurrency in form values
+        form.setValue(`opportunities.${index}.previousCurrency`, currentCurrency);
+      }
+    });
+  }, [currency, convertFromUSD, convertToUSD, form, opportunityFields]);
+  
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    values.opportunities.forEach((opportunity: any, index: number) => {
+      if (currency === "INR") {
+        console.log('CURRENCY IS INR')
+        const convertedRevenue = convertToUSD(opportunity.revenue);
+        console.log('converted revenue',convertedRevenue)
+        values.opportunities[index].revenue = convertedRevenue;
+      }
+    });
     if (obj === undefined) {
       const ifExistResult = await fetch("/api/unique-leads", {
         method: "POST",
@@ -243,9 +298,11 @@ export default function CreateLeadForm({
         createLead(values);
       }
     } else createLead(values);
+    console.log(values);
   }
 
   async function createLead(values: z.infer<typeof formSchema>) {
+    setLoading(true)
     try {
       setOpenAlert(false);
       const method = obj === undefined ? "POST" : "PUT";
@@ -257,8 +314,8 @@ export default function CreateLeadForm({
         },
         body:
           obj === undefined
-            ? JSON.stringify(values)
-            : JSON.stringify({ ...values, original: obj }),
+            ? JSON.stringify({...values, user: session?.user.username})
+            : JSON.stringify({ ...values, original: obj ,user:session?.user.username}),
       });
       if (!response.ok) {
         throw new Error(`Failed to ${obj ? "update" : "create"} lead.`);
@@ -279,11 +336,15 @@ export default function CreateLeadForm({
         title: `Failed to ${obj ? "update" : "create"} lead.`,
         variant: "destructive",
       });
+    } finally{
+      setLoading(false)
     }
   }
   countryList().getLabels();
   const width = "min-w-full sm:min-w-80 ";
   const contactList = form.watch("contacts");
+  // console.log("form",form.getValues('opportunities'))
+  // if (obj) console.log("OBJECT", obj);
   return (
     <Card className="p-4">
       <CardHeader className="flex flex-col">
@@ -411,8 +472,10 @@ export default function CreateLeadForm({
                 <Button
                   type="button"
                   variant="ghost"
+                  className="gap-1"
                   onClick={() => contactAppend(emptyContact)}
                 >
+                  Add Contact
                   <Plus />
                 </Button>
               </div>
@@ -499,6 +562,7 @@ export default function CreateLeadForm({
                               className={width}
                               {...field}
                             /> */}
+
                             <PhoneInput
                               placeholder="Phone number"
                               className={width}
@@ -514,8 +578,10 @@ export default function CreateLeadForm({
                     <Button
                       type="button"
                       variant="ghost"
+                      className="gap-1"
                       onClick={() => contactRemove(index)}
                     >
+                      Delete Contact
                       <Trash2 />
                     </Button>
                   )}
@@ -530,70 +596,111 @@ export default function CreateLeadForm({
                 <Button
                   type="button"
                   variant="ghost"
+                  className="gap-1"
                   onClick={() => opportunityAppend(emptyOpportunity)}
                 >
+                  Add Opportunity
                   <Plus />
                 </Button>
               </div>
             </CardTitle>
             {opportunityFields.map((field, index) => (
               <div key={field.id} className="space-y-8">
-                <FormField
-                  name={`opportunities.${index}.description`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Description"
-                          {...field}
-                          className={width}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <NestedNotes oppIndex={index} form={form} />
+
                 <div className="flex flex-row justify-between">
                   <div className="flex flex-row gap-10 flex-wrap">
-                    <FormField
-                    name={`opportunities.${index}.currency`}
-                    render={({field})=>(
-                      <FormComboBox
-                      field={field}
-                      list={[{label:'USD',value:'USD'},{label:'INR',value:'INR'}]}
-                      form={form}
-                      form_value={`opportunities.${index}.currency`}
-                      form_label="Currency"
-                      text="Select Currency"
-                      placeholder="Search currency..."
-                      command_empty="No currency found."
-                      className={width}
-                    />
-                    )}
-                    />
-                    <FormField
-                      name={`opportunities.${index}.revenue`}
-                      render={({ field }) => (
-                        <FormItem className={width}>
-                          <FormLabel>Revenue</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Revenue"
-                              className={width}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {/* <FormComboBox/> */}
+                    <div className="flex flex-row items-end">
+                      <FormField
+                        name={`opportunities.${index}.currency`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="rounded-r-none justify-between w-20"
+                                  >
+                                    {field.value}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent align="start" className="w-32">
+                                <Command>
+                                  <CommandList>
+                                    <CommandGroup>
+                                      {["USD", "INR"].map((item) => (
+                                        <CommandItem
+                                          key={item}
+                                          value={item}
+                                          className="cursor-pointer"
+                                          onSelect={() => {
+                                            form.setValue(
+                                              `opportunities.${index}.currency`,
+                                              item
+                                            );
+                                            setCurrency(item);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              item === field.value
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            )}
+                                          />
+                                          {item}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        name={`opportunities.${index}.revenue`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Revenue</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Revenue"
+                                className={cn("min-w-60", "rounded-l-none")}
+                                {...field}
+                                value={
+                                  field.value !== ""
+                                    ? parseFloat(field.value).toLocaleString(
+                                        "en-IN"
+                                      )
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  // Remove commas from the input value before setting the form value
+                                  const strippedValue = e.target.value.replace(
+                                    /,/g,
+                                    ""
+                                  );
+                                  // Set the form value with the stripped value
+                                  field.onChange(strippedValue);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <FormField
                       control={form.control}
                       name={`opportunities.${index}.contact_email`}
                       render={({ field }) => {
-                        // console.log("field in form", field.value);
                         return (
                           <FormComboBox
                             field={field}
@@ -619,8 +726,11 @@ export default function CreateLeadForm({
                   <Button
                     type="button"
                     variant="ghost"
+                    className="gap-1"
                     onClick={() => opportunityRemove(index)}
+                    disabled={isLoading}
                   >
+                    Delete opportunity
                     <Trash2 />
                   </Button>
                 </div>
@@ -631,7 +741,7 @@ export default function CreateLeadForm({
 
             <div className="flex flex-row justify-center">
               <Button type="submit" className="px-6">
-                Submit
+                {isLoading? <Loader2/>:'Submit'}
               </Button>
             </div>
             <AlertDialog open={isOpenAlert}>

@@ -5,33 +5,37 @@ import { getServerSession } from "next-auth";
 import React from "react";
 
 const EditLead = async ({searchParams}:{searchParams:any}) => {
-  // console.log(JSON.parse(searchParams.row))
   const id = JSON.parse(searchParams.id)
-  // console.log(obj.original)
-  console.log(id)
   const obj = await db.leads.findUnique({
     where:{
-      id: parseInt(id!)
+      id: parseInt(id!),
+      deletedAt:null
     },
     include:{
       lead_owner:true,
-      contacts:true,
+      contacts:{
+        orderBy:{
+          id:'asc'
+        }
+      },
       account:{
         include:{
+          contacts:true,
           opportunities:{
             include:{
-              contact:true
+              contact:true,
+              notes:true
             }
           }
         }
       }
     }
   })
-  console.log('OBJECT',obj)
   const session = await getServerSession(authOptions)
   const users = await db.user.findMany({
     where: {
       role: "user",
+      deletedAt:null
     },
     select: {
       name: true,

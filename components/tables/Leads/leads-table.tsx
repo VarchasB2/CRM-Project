@@ -128,6 +128,7 @@ export function LeadsTable<TData, TValue>({
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
     onColumnOrderChange: setColumnOrder,
+    autoResetPageIndex:false,
     state: {
       sorting,
       columnFilters,

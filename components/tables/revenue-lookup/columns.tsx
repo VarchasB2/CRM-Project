@@ -7,6 +7,8 @@ import {
 } from "@/lib/funnel-lookup/funnel-lookup-constants";
 import { addDays } from "date-fns";
 import { Progress } from "@/components/ui/progress";
+import { useCurrency } from "@/Providers/currency-provider";
+import RevenueColumn from "./revenue-column";
 
 export type revenue = {
   id: number;
@@ -20,7 +22,7 @@ export type revenue = {
     date: Date;
     company_name: string;
   };
-  revenue: BigInt;
+  revenue: number;
 };
 
 export const columns: ColumnDef<revenue>[] = [
@@ -88,9 +90,11 @@ export const columns: ColumnDef<revenue>[] = [
   {
     accessorKey: "revenue",
     header: "Revenue",
-    accessorFn: (row) => {
-      return row.revenue.toString();
-    },
+    // accessorFn: (row) => {
+      
+    //   return row.revenue.toString();
+    // },
+    cell:({row})=><RevenueColumn row={row}/>,
     filterFn: (row, id, value) => {
       console.log("value", value);
       console.log("row", row.getValue(id));
@@ -99,4 +103,5 @@ export const columns: ColumnDef<revenue>[] = [
       return value.includes(row.getValue(id));
     },
   },
+
 ];

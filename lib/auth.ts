@@ -36,6 +36,9 @@ export const authOptions: NextAuthOptions = {
         if (!existingUser) {
           return null;
         }
+        if (existingUser.status === "blocked") {
+          throw new Error("blocked");
+        }
         if (credentials?.password != existingUser?.pwd) {
           return null;
         }
