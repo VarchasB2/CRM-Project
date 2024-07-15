@@ -24,7 +24,7 @@ const LeadsPage = async () => {
       }
     },
     orderBy: {
-      id: "asc",
+      date: "asc",
     },
   });
   const today: Date = new Date();

@@ -56,6 +56,7 @@ import { DatePickerWithRange } from "../date-picker-with-range";
 import { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
 import config from "@/tailwind.config";
+import ImportCsv from "./importCsv";
 interface LeadsTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -269,6 +270,7 @@ export function LeadsTable<TData, TValue>({
                           }
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    <ImportCsv/>
                   </div>
             <CardTitle className='py-3 sm:py-0'>
               <div className="relative flex">
@@ -388,6 +390,7 @@ export function LeadsTable<TData, TValue>({
                           }
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    <ImportCsv/>
                   </div>
             </CardTitle>
             

@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { toast } from "@/components/ui/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { ChangeEvent } from "react";
+import React, { ChangeEvent, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -52,6 +52,7 @@ export const formSchema = z.object({
 
 const UserForm = ({ obj }: { obj?: any }) => {
   const [preview, setPreview] = React.useState(obj===undefined?"/img/Profile_avatar_placeholder_large.png ":obj.image);
+  const [file,setFile] = React.useState<File>()
   console.log(obj)
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -69,6 +70,7 @@ const UserForm = ({ obj }: { obj?: any }) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
+      setFile(file)
       reader.onloadend = () => {
         setPreview(reader.result as string); // Set image preview
       };
@@ -79,16 +81,39 @@ const UserForm = ({ obj }: { obj?: any }) => {
     console.log('values',values)
     console.log(typeof values.image==='string')
     try {
-      const response = await fetch('/api/users', {
-        method: obj===undefined?'POST':'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: typeof values.image==='string'?JSON.stringify(values):JSON.stringify({...values,image:values.image['0'].name}),
-      });
+      const formData = new FormData();
+      formData.append('first_name', values.first_name);
+      formData.append('last_name', values.last_name);
+      formData.append('email', values.email);
+      formData.append('role', values.role);
+      formData.append('password', values.password);
+      formData.append('confirm_password', values.confirm_password);
 
+      if (typeof values.image === 'string') {
+        formData.append('image', values.image);
+      } else {
+        formData.append('image', file!); // Ensure file is not undefined
+      }
+      // const response = await fetch('/api/users', {
+      //   method: obj===undefined?'POST':'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: typeof values.image==='string'?JSON.stringify(values):JSON.stringify({...values,image:file}),
+      // });
+      const response = await fetch('/api/users', {
+        method: obj === undefined ? 'POST' : 'PUT',
+        body: formData,
+      });
       if (!response.ok) {
         throw new Error('Failed to add user');
+      }else{
+        toast({
+          title:'User successfully added'
+        })
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       }
 
       // Assuming successful submission clears form or performs redirect

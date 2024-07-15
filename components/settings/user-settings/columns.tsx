@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { format } from "url";
+import { supabase } from "@/lib/supabase";
 
 
 export type user = {
